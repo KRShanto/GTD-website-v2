@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { requireAuth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Admin Panel - GTD Media",
@@ -8,11 +9,13 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireAuth();
+
   return (
     <>
       {children}
