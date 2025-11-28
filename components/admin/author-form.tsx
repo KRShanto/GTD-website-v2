@@ -15,7 +15,7 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
-import { Author } from "@/lib/types";
+import { Author } from "@/lib/generated/prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";
@@ -39,7 +39,7 @@ export default function AuthorForm({
     email: author?.email || "",
   });
   const [imagePreview, setImagePreview] = useState<string | null>(
-    author?.avatar_url || null
+    author?.avatarUrl || null
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -58,7 +58,7 @@ export default function AuthorForm({
 
   const handleImageRemove = () => {
     setSelectedFile(null);
-    setImagePreview(author?.avatar_url || null);
+    setImagePreview(author?.avatarUrl || null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

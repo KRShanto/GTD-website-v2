@@ -22,7 +22,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Users, Mail, Edit3, Trash2, Calendar } from "lucide-react";
-import { Author } from "@/lib/types";
+import { Author } from "@/lib/generated/prisma/client";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
@@ -32,9 +32,9 @@ interface AuthorManagementProps {
 }
 
 export default function AuthorManagement({ authors }: AuthorManagementProps) {
-  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const handleDeleteAuthor = async (id: number, name: string) => {
+  const handleDeleteAuthor = async (id: string, name: string) => {
     setIsDeleting(id);
     try {
       const { deleteAuthor } = await import("@/actions/authors/delete");
@@ -95,7 +95,7 @@ export default function AuthorManagement({ authors }: AuthorManagementProps) {
               <TableCell>
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-orange-500/30 bg-gray-800">
                   <Image
-                    src={author.avatar_url}
+                    src={author.avatarUrl}
                     alt={author.name}
                     width={40}
                     height={40}
@@ -114,7 +114,7 @@ export default function AuthorManagement({ authors }: AuthorManagementProps) {
               <TableCell className="text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4 inline-block text-orange-400" />
-                  {formatDate(author.created_at)}
+                  {formatDate(author.createdAt.toISOString())}
                 </span>
               </TableCell>
               <TableCell className="text-center">

@@ -9,10 +9,12 @@ interface EditAuthorPageProps {
 }
 
 export default async function EditAuthorPage({ params }: EditAuthorPageProps) {
+  // Get params - ID is now a UUID string, not a number
   const { id } = await params;
-  const authorId = parseInt(id);
+  const authorId = id;
 
-  if (isNaN(authorId)) {
+  // Validate UUID format (basic check)
+  if (!authorId || authorId.length < 10) {
     notFound();
   }
 
