@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Team members model
+// Represents team members with their profile information
+model Team {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  name      String   @db.Text
+  title     String   @db.Text
+  bio       String   @db.Text
+  slug      String   @db.Text
+  imageUrl  String   @map("image_url") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("team")
+}
+
+// Authors model
+// Represents blog post authors
+model Author {
+  id        BigInt    @id @default(autoincrement()) @db.BigInt
+  name      String    @db.Text
+  email     String?   @db.Text
+  avatarUrl String    @map("avatar_url") @db.Text
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relationship: One author can have many blog posts
+  blogs Blog[]
+
+  @@index([email])
+  @@map("authors")
+}
+
+// Blogs model
+// Represents blog posts with SEO metadata
+model Blog {
+  id               BigInt    @id @default(autoincrement()) @db.BigInt
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  title            String    @db.Text
+  description      String?   @db.Text
+  content          String    @db.Text
+  featuredImageUrl String?   @map("featured_image_url") @db.Text
+  authorId         BigInt    @map("author_id") @db.BigInt
+  isPublished      Boolean   @default(false) @map("is_published")
+  seoTitle         String?   @map("seo_title") @db.Text
+  seoDescription   String?   @map("seo_description") @db.Text
+  keywords         Json?     // Array of keywords stored as JSON
+
+  // Relationship: Many blogs belong to one author
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([isPublished])
+  @@index([createdAt])
+  @@map("blogs")
+}
+
+// Testimonials model
+// Represents client testimonials with ratings
+model Testimonial {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  name      String   @db.Text
+  address   String   @db.Text
+  company   String   @db.Text
+  content   String   @db.Text
+  rating    Decimal  @db.Decimal(3, 2) // Rating from 1.00 to 5.00
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("testimonials")
+}
+
+// Gallery images model
+// Represents images in the gallery
+model GalleryImage {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  imageUrl  String   @map("image_url") @db.Text
+  alt       String   @db.Text
+
+  @@map("gallery-images")
+}
+
+// Gallery videos model
+// Represents videos in the gallery with optional thumbnails
+model GalleryVideo {
+  id           BigInt    @id @default(autoincrement()) @db.BigInt
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  videoUrl     String    @map("video_url") @db.Text
+  alt          String    @db.Text
+  thumbnailUrl String?   @map("thumbnail_url") @db.Text
+
+  @@map("gallery-videos")
+}
