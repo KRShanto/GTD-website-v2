@@ -1,30 +1,20 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-export async function deleteTestimonial(id: number) {
+/**
+ * Deletes a testimonial from the database
+ * 
+ * @param id - The UUID string of the testimonial to delete
+ * @returns Object with success status or an error message
+ */
+export async function deleteTestimonial(id: string) {
   try {
-    const supabase = await createClient();
-
-    // Check if testimonial exists
-    const { data: existingTestimonial, error: fetchError } = await supabase
-      .from("testimonials")
-      .select("id, name")
-      .eq("id", id)
-      .single();
-
-    if (fetchError || !existingTestimonial) {
-      return { error: "Testimonial not found" };
-    }
-
-    // Delete testimonial
-    const { error } = await supabase.from("testimonials").delete().eq("id", id);
-
-    if (error) {
-      console.error("Database error:", error);
-      return { error: "Failed to delete testimonial. Please try again." };
-    }
+    // Check if testimonial exists and delete
+    await prisma.testimonial.delete({
+      where: { id },
+    });
 
     // Revalidate paths
     revalidatePath("/admin/testimonials");
@@ -32,7 +22,15 @@ export async function deleteTestimonial(id: number) {
 
     return { success: true };
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Delete testimonial error:", error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("Record to delete does not exist")) {
+        return { error: "Testimonial not found" };
+      }
+    }
+    
     return { error: "An unexpected error occurred" };
   }
 }
