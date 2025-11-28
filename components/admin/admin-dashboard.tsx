@@ -16,13 +16,13 @@ import {
   Home,
 } from "lucide-react";
 import { logout } from "@/actions/auth/logout";
-import { AdminUser } from "@/actions/auth/user";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";
+import { AuthUser } from "@/lib/auth";
 
 interface AdminDashboardProps {
-  admin: AdminUser;
+  admin: AuthUser;
   counts?: {
     authors?: number;
     team?: number;
@@ -60,11 +60,6 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
       setIsLoggingOut(false);
     }
   };
-
-  const adminName =
-    admin.user_metadata?.display_name ||
-    admin.user_metadata?.full_name ||
-    admin.email.split("@")[0];
 
   const managementCards = [
     {
@@ -156,7 +151,7 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
           <div className="mb-8">
             <h1 className="text-3xl xs:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Welcome back, {adminName}!
+                Welcome back, {admin.name}!
               </span>
             </h1>
             <p className="text-gray-400 text-lg">
@@ -182,7 +177,7 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
                   </div>
                   <div>
                     <div className="text-sm text-gray-400">Display Name</div>
-                    <div className="text-white font-medium">{adminName}</div>
+                    <div className="text-white font-medium">{admin.name}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -190,8 +185,10 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
                     <Mail className="w-5 h-5 text-orange-400" />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">Email Address</div>
-                    <div className="text-white font-medium">{admin.email}</div>
+                    <div className="text-sm text-gray-400">Username</div>
+                    <div className="text-white font-medium">
+                      {admin.username}
+                    </div>
                   </div>
                 </div>
               </div>

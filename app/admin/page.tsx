@@ -1,4 +1,3 @@
-import { getCurrentAdmin } from "@/actions/auth/user";
 import { getAuthors } from "@/actions/authors/read";
 import { getTeamMembers } from "@/actions/team/read";
 import { getGalleryImages } from "@/actions/gallery/images/read";
@@ -7,10 +6,11 @@ import { getTestimonials } from "@/actions/testimonials/read";
 import { getBlogCount } from "@/actions/blogs/read";
 import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/admin/admin-dashboard";
+import { getUser } from "@/lib/auth";
 
 export default async function AdminPage() {
   // Check auth
-  const admin = await getCurrentAdmin();
+  const admin = await getUser();
 
   if (!admin) {
     redirect("/admin/login");
