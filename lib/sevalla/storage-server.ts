@@ -218,36 +218,41 @@ export async function deleteFileFromSevallaByUrlServer(
     }
 
     // Extract bucket and path from Sevalla URL
-    // Format: https://your-sevalla-url.com/bucket/path/to/file
+    // Public URL format: https://{bucket-name}.sevalla.storage/{filePath}
+    // Endpoint URL format: https://{endpoint-url}/{bucket}/{filePath}
+
+    // Check if this is a public Sevalla URL (bucket-name.sevalla.storage)
+    const publicUrlMatch = url.match(
+      /^https:\/\/([^\/]+)\.sevalla\.storage\/(.+)$/
+    );
+    if (publicUrlMatch) {
+      const bucket = publicUrlMatch[1];
+      const filePath = decodeURIComponent(publicUrlMatch[2]);
+      return deleteFileFromSevallaServer(bucket, filePath);
+    }
+
+    // Fallback: Try to parse as endpoint URL format
     const sevallaUrl = process.env.SEVALLA_URL;
-    if (!sevallaUrl) {
-      console.error("SEVALLA_URL not configured");
-      return false;
+    if (sevallaUrl) {
+      const baseUrl = sevallaUrl.replace(/\/$/, "");
+      if (url.startsWith(baseUrl)) {
+        // Remove base URL to get bucket/path
+        const pathAfterBase = url.replace(baseUrl + "/", "");
+        const pathParts = pathAfterBase.split("/");
+
+        if (pathParts.length >= 2) {
+          const bucket = pathParts[0];
+          const filePath = pathParts.slice(1).join("/");
+          return deleteFileFromSevallaServer(
+            bucket,
+            decodeURIComponent(filePath)
+          );
+        }
+      }
     }
 
-    const baseUrl = sevallaUrl.replace(/\/$/, "");
-
-    if (!url.startsWith(baseUrl)) {
-      console.error("Invalid Sevalla URL format:", url);
-      return false;
-    }
-
-    // Remove base URL to get bucket/path
-    const pathAfterBase = url.replace(baseUrl + "/", "");
-    const pathParts = pathAfterBase.split("/");
-
-    if (pathParts.length < 2) {
-      console.error(
-        "Invalid Sevalla URL format (missing bucket or path):",
-        url
-      );
-      return false;
-    }
-
-    const bucket = pathParts[0];
-    const filePath = pathParts.slice(1).join("/");
-
-    return deleteFileFromSevallaServer(bucket, decodeURIComponent(filePath));
+    console.error("Invalid Sevalla URL format:", url);
+    return false;
   } catch (error) {
     console.error("Error deleting file from Sevalla:", error);
     return false;
