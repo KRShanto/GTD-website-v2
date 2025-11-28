@@ -23,7 +23,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 interface SessionPayload {
   id: string;
   username: string;
-  email: string;
   name: string;
   iat?: number;
   exp?: number;
@@ -39,7 +38,6 @@ interface SessionPayload {
  * @param payload - User session data to encode in the token
  * @param payload.id - Unique user identifier
  * @param payload.username - User's username
- * @param payload.email - User's email address
  * @param payload.name - User's display name
  *
  * @returns Promise<string> - The signed JWT token
@@ -49,7 +47,6 @@ interface SessionPayload {
  * const token = await signJWT({
  *   id: "user123",
  *   username: "john_doe",
- *   email: "user@example.com",
  *   name: "John Doe",
  * });
  * ```
@@ -108,7 +105,6 @@ export async function verifyJWT(token: string): Promise<SessionPayload | null> {
     // This ensures type safety and prevents runtime errors
     if (
       typeof payload.id === "string" &&
-      typeof payload.email === "string" &&
       typeof payload.name === "string" &&
       typeof payload.username === "string"
     ) {
@@ -117,7 +113,6 @@ export async function verifyJWT(token: string): Promise<SessionPayload | null> {
       return {
         id: payload.id,
         username: payload.username,
-        email: payload.email,
         name: payload.name,
         iat: payload.iat,
         exp: payload.exp,

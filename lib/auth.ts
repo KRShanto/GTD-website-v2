@@ -28,7 +28,6 @@ export async function getUser() {
       select: {
         id: true,
         username: true,
-        email: true,
         name: true,
       },
     });
@@ -42,7 +41,6 @@ export async function getUser() {
     return {
       id: user.id,
       username: user.username,
-      email: user.email,
       name: user.name,
     };
   } catch (error) {
