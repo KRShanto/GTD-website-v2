@@ -29,12 +29,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
 
 interface TeamMemberFormProps {
-  id?: number;
+  id?: string; // Changed from number to string (UUID)
   initialData?: {
     name: string;
     title: string;
     bio: string;
-    image_url: string;
+    image_url: string; // Keep snake_case for form compatibility
   };
   onSuccess?: () => void;
 }

@@ -85,7 +85,7 @@ function DraggableTeamMemberCard({
           </div>
         </div>
         <img
-          src={member.image_url}
+          src={member.imageUrl}
           alt={member.name}
           className="w-full h-48 object-cover rounded-lg"
         />

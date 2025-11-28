@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import TeamMemberEdit from "@/components/admin/team-member-edit";
-import { getCurrentAdmin } from "@/actions/auth/user";
+import { getUser } from "@/lib/auth";
 import { getTeamMember } from "@/actions/team/read";
 
 interface EditTeamMemberPageProps {
@@ -11,16 +11,17 @@ export default async function EditTeamMemberPage({
   params,
 }: EditTeamMemberPageProps) {
   // Check auth
-  const admin = await getCurrentAdmin();
+  const admin = await getUser();
   if (!admin) {
     redirect("/admin/login");
   }
 
-  // Get params
+  // Get params - ID is now a UUID string, not a number
   const { id } = await params;
-  const memberId = parseInt(id);
+  const memberId = id;
 
-  if (isNaN(memberId)) {
+  // Validate UUID format (basic check)
+  if (!memberId || memberId.length < 10) {
     notFound();
   }
 
@@ -31,5 +32,11 @@ export default async function EditTeamMemberPage({
     notFound();
   }
 
-  return <TeamMemberEdit member={member} />;
+  // Transform Team to match form expectations (image_url instead of imageUrl)
+  const formData = {
+    ...member,
+    image_url: member.imageUrl,
+  };
+
+  return <TeamMemberEdit member={formData as any} />;
 }

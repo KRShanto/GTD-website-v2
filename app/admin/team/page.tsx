@@ -4,11 +4,12 @@ import { ArrowLeft, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import AnimatedSection from "@/components/animated-section";
-import { prisma } from "@/lib/db";
+import { getTeamMembers } from "@/actions/team/read";
 
 export default async function TeamPage() {
-  // const { success, data: members, error } = await getTeamMembers();
-  const members = await prisma.team.findMany();
+  // Fetch team members using the read action
+  const result = await getTeamMembers();
+  const members = result.success && result.data ? result.data : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
