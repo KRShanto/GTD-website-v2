@@ -16,7 +16,7 @@ datasource db {
 
 // User model for authentication
 model User {
-  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  id        String   @id @default(uuid())
   name      String   @db.Text
   username  String   @db.Text
   email     String   @db.Text
@@ -31,7 +31,7 @@ model User {
 // Team members model
 // Represents team members with their profile information
 model Team {
-  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  id        String   @id @default(uuid())
   name      String   @db.Text
   title     String   @db.Text
   bio       String   @db.Text
@@ -45,7 +45,7 @@ model Team {
 // Authors model
 // Represents blog post authors
 model Author {
-  id        BigInt    @id @default(autoincrement()) @db.BigInt
+  id        String    @id @default(uuid())
   name      String    @db.Text
   email     String?   @db.Text
   avatarUrl String    @map("avatar_url") @db.Text
@@ -61,14 +61,14 @@ model Author {
 // Blogs model
 // Represents blog posts with SEO metadata
 model Blog {
-  id               BigInt    @id @default(autoincrement()) @db.BigInt
+  id               String    @id @default(uuid())
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   title            String    @db.Text
   description      String?   @db.Text
   content          String    @db.Text
   featuredImageUrl String?   @map("featured_image_url") @db.Text
-  authorId         BigInt    @map("author_id") @db.BigInt
+  authorId         String    @map("author_id")
   isPublished      Boolean   @default(false) @map("is_published")
   seoTitle         String?   @map("seo_title") @db.Text
   seoDescription   String?   @map("seo_description") @db.Text
@@ -86,7 +86,7 @@ model Blog {
 // Testimonials model
 // Represents client testimonials with ratings
 model Testimonial {
-  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  id        String   @id @default(uuid())
   name      String   @db.Text
   address   String   @db.Text
   company   String   @db.Text
@@ -100,7 +100,7 @@ model Testimonial {
 // Gallery images model
 // Represents images in the gallery
 model GalleryImage {
-  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   imageUrl  String   @map("image_url") @db.Text
   alt       String   @db.Text
@@ -111,7 +111,7 @@ model GalleryImage {
 // Gallery videos model
 // Represents videos in the gallery with optional thumbnails
 model GalleryVideo {
-  id           BigInt    @id @default(autoincrement()) @db.BigInt
+  id           String    @id @default(uuid())
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   videoUrl     String    @map("video_url") @db.Text
   alt          String    @db.Text
