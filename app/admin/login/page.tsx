@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 
 export default function AdminLogin() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -66,19 +68,21 @@ export default function AdminLogin() {
           });
         }
         setIsLoading(false);
-      }
-      // If no error returned, login was successful and redirect will happen
-      // Don't show success toast as page will redirect
-    } catch (error: any) {
-      // Check if it's a Next.js redirect error (this is expected for successful login)
-      if (
-        error?.message?.includes("NEXT_REDIRECT") ||
-        error?.digest?.includes("NEXT_REDIRECT")
-      ) {
-        // This is a successful redirect, not an actual error
         return;
       }
 
+      if (result?.success) {
+        router.push("/admin");
+        setIsLoading(false);
+        return;
+      }
+
+      toast.error("Authentication failed", {
+        duration: 5000,
+        description: "Unexpected response received. Please try again.",
+      });
+      setIsLoading(false);
+    } catch (error) {
       console.error("Login error:", error);
       toast.error("An unexpected error occurred", {
         duration: 5000,

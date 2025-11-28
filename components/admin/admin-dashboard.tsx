@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
+  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -43,18 +45,18 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
       if (result?.error) {
         toast.error(result.error);
         setIsLoggingOut(false);
-      }
-      // If no error returned, logout was successful and redirect will happen
-    } catch (error: any) {
-      // Check if it's a Next.js redirect error (this is expected for successful logout)
-      if (
-        error?.message?.includes("NEXT_REDIRECT") ||
-        error?.digest?.includes("NEXT_REDIRECT")
-      ) {
-        // This is a successful redirect, not an actual error
         return;
       }
 
+      if (result?.success) {
+        router.push("/admin/login");
+        setIsLoggingOut(false);
+        return;
+      }
+
+      toast.error("Failed to logout. Please try again.");
+      setIsLoggingOut(false);
+    } catch (error) {
       console.error("Logout error:", error);
       toast.error("An unexpected error occurred during logout");
       setIsLoggingOut(false);
