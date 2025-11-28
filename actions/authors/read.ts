@@ -1,65 +1,61 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
+import { Author } from "@/lib/generated/prisma/client";
 
-// Get all authors
+/**
+ * Fetches all authors from the database
+ * 
+ * @returns Object with either the authors array or an error message
+ */
 export async function getAuthors() {
   try {
-    const supabase = await createClient();
+    const authors = await prisma.author.findMany({
+      orderBy: { createdAt: "asc" },
+    });
 
-    const { data, error } = await supabase
-      .from("authors")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    return { success: true, data };
+    return { success: true, data: authors };
   } catch (error) {
     console.error("Get authors error:", error);
     return { error: "An unexpected error occurred" };
   }
 }
 
-// Get all authors (alias for compatibility)
+/**
+ * Fetches all authors (alias for compatibility)
+ * 
+ * @returns Object with authors array and error message
+ */
 export async function getAllAuthors() {
   try {
-    const supabase = await createClient();
+    const authors = await prisma.author.findMany({
+      orderBy: { createdAt: "asc" },
+    });
 
-    const { data, error } = await supabase
-      .from("authors")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      return { authors: [], error: error.message };
-    }
-
-    return { authors: data, error: null };
+    return { authors, error: null };
   } catch (error) {
     console.error("Get authors error:", error);
     return { authors: [], error: "An unexpected error occurred" };
   }
 }
 
-// Get single author
-export async function getAuthor(id: number) {
+/**
+ * Fetches a single author by ID
+ * 
+ * @param id - The UUID string of the author to retrieve
+ * @returns Object with either the author data or an error message
+ */
+export async function getAuthor(id: string) {
   try {
-    const supabase = await createClient();
+    const author = await prisma.author.findUnique({
+      where: { id },
+    });
 
-    const { data, error } = await supabase
-      .from("authors")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      return { error: error.message };
+    if (!author) {
+      return { error: "Author not found" };
     }
 
-    return { success: true, data };
+    return { success: true, data: author };
   } catch (error) {
     console.error("Get author error:", error);
     return { error: "An unexpected error occurred" };
