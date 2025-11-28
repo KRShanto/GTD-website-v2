@@ -1,18 +1,22 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Creates a new testimonial in the database
+ * 
+ * @param formData - FormData containing testimonial information
+ * @returns Object with either the created testimonial data or an error message
+ */
 export async function createTestimonial(formData: FormData) {
   try {
-    const supabase = await createClient();
-
     // Extract form data
     const name = formData.get("name") as string;
     const address = formData.get("address") as string;
     const company = formData.get("company") as string;
     const content = formData.get("content") as string;
-    const rating = parseInt(formData.get("rating") as string);
+    const ratingValue = parseFloat(formData.get("rating") as string);
 
     // Validation
     if (
@@ -24,7 +28,7 @@ export async function createTestimonial(formData: FormData) {
       return { error: "All fields are required" };
     }
 
-    if (!rating || rating < 1 || rating > 5) {
+    if (!ratingValue || ratingValue < 1 || ratingValue > 5) {
       return { error: "Rating must be between 1 and 5" };
     }
 
@@ -36,31 +40,24 @@ export async function createTestimonial(formData: FormData) {
       return { error: "Content must be less than 1000 characters" };
     }
 
-    // Insert testimonial into database
-    const { data, error } = await supabase
-      .from("testimonials")
-      .insert({
+    // Create testimonial in database using Prisma
+    const testimonial = await prisma.testimonial.create({
+      data: {
         name: name.trim(),
         address: address.trim(),
         company: company.trim(),
         content: content.trim(),
-        rating,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Database error:", error);
-      return { error: "Failed to create testimonial. Please try again." };
-    }
+        rating: ratingValue, // Prisma will convert to Decimal
+      },
+    });
 
     // Revalidate paths
     revalidatePath("/admin/testimonials");
     revalidatePath("/");
 
-    return { success: true, data };
+    return { success: true, data: testimonial };
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Create testimonial error:", error);
     return { error: "An unexpected error occurred" };
   }
 }
