@@ -1,7 +1,5 @@
 import TestimonialForm from "@/components/admin/testimonial-form";
-import { getCurrentAdmin } from "@/actions/auth/user";
 import { getTestimonialById } from "@/actions/testimonials/read";
-import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 
 interface EditTestimonialPageProps {
@@ -11,16 +9,12 @@ interface EditTestimonialPageProps {
 export default async function EditTestimonialPage({
   params,
 }: EditTestimonialPageProps) {
-  const admin = await getCurrentAdmin();
-
-  if (!admin) {
-    redirect("/admin/login");
-  }
-
+  // Get params - ID is now a UUID string, not a number
   const { id } = await params;
-  const testimonialId = parseInt(id);
+  const testimonialId = id;
 
-  if (isNaN(testimonialId)) {
+  // Validate UUID format (basic check)
+  if (!testimonialId || testimonialId.length < 10) {
     notFound();
   }
 

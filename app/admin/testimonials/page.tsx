@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import TestimonialManagement from "@/components/admin/testimonial-management";
 import { getTestimonials } from "@/actions/testimonials/read";
-import { getCurrentAdmin } from "@/actions/auth/user";
+import { getUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 async function TestimonialsContent() {
@@ -13,7 +13,7 @@ async function TestimonialsContent() {
 }
 
 export default async function TestimonialsPage() {
-  const admin = await getCurrentAdmin();
+  const admin = await getUser();
 
   if (!admin) {
     redirect("/admin/login");

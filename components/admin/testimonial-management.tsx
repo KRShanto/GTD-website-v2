@@ -13,7 +13,7 @@ import {
   Quote,
   Star,
 } from "lucide-react";
-import { Testimonial } from "@/lib/types";
+import { Testimonial } from "@/lib/generated/prisma/client";
 import { deleteTestimonial } from "@/actions/testimonials/delete";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
@@ -40,9 +40,9 @@ export default function TestimonialManagement({
   error,
 }: TestimonialManagementProps) {
   const [testimonials, setTestimonials] = useState(initialTestimonials);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = async (id: number, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     setDeletingId(id);
     try {
       const result = await deleteTestimonial(id);
@@ -185,7 +185,7 @@ export default function TestimonialManagement({
 
                       {/* Rating */}
                       <div className="flex items-center mb-4">
-                        {[...Array(testimonial.rating)].map((_, i) => (
+                        {[...Array(Number(testimonial.rating))].map((_, i) => (
                           <Star
                             key={i}
                             className="h-4 w-4 text-orange-400 fill-current"

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { createTestimonial } from "@/actions/testimonials/create";
 import { updateTestimonial } from "@/actions/testimonials/update";
-import { Testimonial } from "@/lib/types";
+import { Testimonial } from "@/lib/generated/prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";
