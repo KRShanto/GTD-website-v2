@@ -1,16 +1,14 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 /**
  * Logs out the current user by clearing the authentication cookie
  * 
  * This function removes the JWT token from the HTTP-only cookie,
- * effectively ending the user's session. After logout, the user
- * is redirected to the login page.
+ * effectively ending the user's session.
  * 
- * @returns Object with error message if logout fails, or redirects on success
+ * @returns Object with error message if logout fails, or success flag on success
  * 
  * @example
  * ```typescript
@@ -35,8 +33,7 @@ export async function logout() {
       maxAge: 0, // Expire immediately
     });
 
-    // Redirect to login page after successful logout
-    redirect("/admin/login");
+    return { success: true };
   } catch (error) {
     console.error("Logout error:", error);
     return { error: "Failed to logout. Please try again." };
