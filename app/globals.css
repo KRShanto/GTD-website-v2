@@ -1,0 +1,516 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Remove browser default outline and ring on form inputs */
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible,
+  button:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Override Tailwind focus-visible ring */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    --tw-ring-shadow: none !important;
+    --tw-ring-offset-shadow: none !important;
+  }
+}
+
+/* Custom toast styles for admin panel */
+@layer components {
+  /* Error toast styling */
+  [data-sonner-toast][data-type="error"] {
+    background-color: #7f1d1d !important; /* Dark red background */
+    border-color: #dc2626 !important; /* Red border */
+    color: #fef2f2 !important; /* Light red text */
+  }
+
+  [data-sonner-toast][data-type="error"] [data-icon] {
+    color: #f87171 !important; /* Light red icon */
+  }
+
+  [data-sonner-toast][data-type="error"] [data-title] {
+    color: #fef2f2 !important; /* Light red title */
+    font-weight: 600;
+  }
+
+  [data-sonner-toast][data-type="error"] [data-description] {
+    color: #fecaca !important; /* Very light red description */
+  }
+
+  /* Success toast styling */
+  [data-sonner-toast][data-type="success"] {
+    background-color: #14532d !important; /* Dark green background */
+    border-color: #16a34a !important; /* Green border */
+    color: #f0fdf4 !important; /* Light green text */
+  }
+
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    color: #4ade80 !important; /* Light green icon */
+  }
+
+  [data-sonner-toast][data-type="success"] [data-title] {
+    color: #f0fdf4 !important; /* Light green title */
+    font-weight: 600;
+  }
+
+  /* Warning toast styling */
+  [data-sonner-toast][data-type="warning"] {
+    background-color: #78350f !important; /* Dark orange background */
+    border-color: #d97706 !important; /* Orange border */
+    color: #fffbeb !important; /* Light orange text */
+  }
+
+  [data-sonner-toast][data-type="warning"] [data-icon] {
+    color: #fbbf24 !important; /* Light orange icon */
+  }
+
+  /* General toast improvements */
+  [data-sonner-toast] {
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+      0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  /* Admin toast specific styling */
+  .admin-toast [data-sonner-toast] {
+    font-family: inherit;
+  }
+
+  /* Tiptap Editor Styles */
+  .ProseMirror {
+    outline: none !important;
+  }
+
+  .ProseMirror * {
+    outline: none !important;
+  }
+
+  .ProseMirror:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .ProseMirror h1 {
+    font-size: 1.875rem !important; /* 30px */
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror h2 {
+    font-size: 1.5rem !important; /* 24px */
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.75rem !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror h3 {
+    font-size: 1.25rem !important; /* 20px */
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror p {
+    margin-bottom: 0.75rem !important;
+    line-height: 1.6 !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror ul {
+    list-style-type: disc !important;
+    margin-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    padding-left: 0 !important;
+  }
+
+  .ProseMirror ol {
+    list-style-type: decimal !important;
+    margin-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    padding-left: 0 !important;
+  }
+
+  .ProseMirror li {
+    margin-bottom: 0.25rem !important;
+    color: #ffffff !important;
+    outline: none !important;
+  }
+
+  .ProseMirror blockquote {
+    border-left: 4px solid #f97316 !important; /* Orange border */
+    padding-left: 1rem !important;
+    margin: 1rem 0 !important;
+    font-style: italic !important;
+    color: #d1d5db !important; /* Light gray text */
+    background-color: rgba(31, 41, 55, 0.5) !important;
+    padding: 1rem !important;
+    border-radius: 0.375rem !important;
+  }
+
+  .ProseMirror pre {
+    background-color: #111827 !important; /* Very dark gray */
+    color: #f9fafb !important;
+    padding: 1rem !important;
+    border-radius: 0.375rem !important;
+    overflow-x: auto !important;
+    margin: 1rem 0 !important;
+    border: 1px solid #374151 !important;
+  }
+
+  .ProseMirror code {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+    padding: 0.125rem 0.375rem !important;
+    border-radius: 0.25rem !important;
+    font-size: 0.875rem !important;
+    font-family: "Courier New", monospace !important;
+  }
+
+  .ProseMirror pre code {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .ProseMirror strong {
+    font-weight: 700 !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror em {
+    font-style: italic !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror u {
+    text-decoration: underline !important;
+    color: #ffffff !important;
+  }
+
+  .ProseMirror a {
+    color: #fb923c !important; /* Orange links */
+    text-decoration: underline !important;
+    cursor: pointer !important;
+  }
+
+  .ProseMirror a:hover {
+    color: #fdba74 !important; /* Lighter orange on hover */
+  }
+
+  .ProseMirror img {
+    border-radius: 0.5rem !important;
+    margin: 1rem 0 !important;
+    display: block !important;
+    cursor: pointer !important;
+    object-fit: cover !important;
+  }
+
+  .ProseMirror img.ProseMirror-selectednode {
+    outline: 2px solid #f97316 !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Image wrapper styling */
+  .ProseMirror .image-wrapper {
+    position: relative !important;
+    display: inline-block !important;
+    max-width: 100% !important;
+  }
+
+  .ProseMirror .image-wrapper:hover .image-editor-controls {
+    opacity: 1 !important;
+  }
+
+  .ProseMirror .image-wrapper:hover .resize-handles {
+    opacity: 1 !important;
+  }
+
+  /* Image editor controls */
+  .ProseMirror .image-editor-controls {
+    position: absolute !important;
+    top: 0.5rem !important;
+    left: 0.5rem !important;
+    background-color: rgba(31, 41, 55, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+    z-index: 20 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    min-width: 200px !important;
+    border: 1px solid rgba(249, 115, 22, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .ProseMirror .image-editor-controls input {
+    background-color: #374151 !important;
+    color: white !important;
+    border: 1px solid #4b5563 !important;
+    border-radius: 0.25rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    width: 4rem !important;
+  }
+
+  .ProseMirror .image-editor-controls input:focus {
+    outline: none !important;
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 1px #f97316 !important;
+  }
+
+  .ProseMirror .image-editor-controls label {
+    color: white !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+  }
+
+  .ProseMirror .image-editor-controls .preset-btn {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    background-color: #f97316 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0.25rem !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  .ProseMirror .image-editor-controls .preset-btn:hover {
+    background-color: #ea580c !important;
+  }
+
+  /* Resize handles */
+  .ProseMirror .resize-handles {
+    position: absolute !important;
+    inset: 0 !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+    pointer-events: none !important;
+  }
+
+  .ProseMirror .resize-handle {
+    position: absolute !important;
+    width: 12px !important;
+    height: 12px !important;
+    background-color: #f97316 !important;
+    border: 2px solid white !important;
+    border-radius: 50% !important;
+    pointer-events: auto !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .ProseMirror .resize-handle:hover {
+    background-color: #ea580c !important;
+    transform: scale(1.2) !important;
+  }
+
+  .ProseMirror .resize-handle.cursor-se-resize {
+    bottom: -6px !important;
+    right: -6px !important;
+    cursor: se-resize !important;
+  }
+
+  .ProseMirror .resize-handle.cursor-sw-resize {
+    bottom: -6px !important;
+    left: -6px !important;
+    cursor: sw-resize !important;
+  }
+
+  .ProseMirror .resize-handle.cursor-ne-resize {
+    top: -6px !important;
+    right: -6px !important;
+    cursor: ne-resize !important;
+  }
+
+  .ProseMirror .resize-handle.cursor-nw-resize {
+    top: -6px !important;
+    left: -6px !important;
+    cursor: nw-resize !important;
+  }
+
+  /* Ensure content can flow after images */
+  .ProseMirror img + * {
+    margin-top: 1rem !important;
+  }
+
+  .ProseMirror p:has(img) {
+    margin: 0 !important;
+  }
+
+  /* Remove focus outlines completely */
+  .ProseMirror .has-focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder) !important;
+    float: left !important;
+    color: #6b7280 !important; /* Gray placeholder */
+    pointer-events: none !important;
+    height: 0 !important;
+  }
+
+  /* Task list styles */
+  .ProseMirror ul[data-type="taskList"] {
+    list-style: none !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .ProseMirror li[data-type="taskItem"] {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    outline: none !important;
+  }
+
+  .ProseMirror li[data-type="taskItem"] > label {
+    margin-right: 0.5rem !important;
+    user-select: none !important;
+  }
+
+  .ProseMirror li[data-type="taskItem"] > div {
+    flex: 1 !important;
+  }
+
+  /* Text alignment */
+  .ProseMirror [style*="text-align: center"] {
+    text-align: center !important;
+  }
+
+  .ProseMirror [style*="text-align: right"] {
+    text-align: right !important;
+  }
+
+  .ProseMirror [style*="text-align: left"] {
+    text-align: left !important;
+  }
+
+  /* Highlight styles */
+  .ProseMirror mark {
+    background-color: #fbbf24 !important;
+    color: #111827 !important;
+    padding: 0.125rem 0.25rem !important;
+    border-radius: 0.25rem !important;
+  }
+
+  /* Remove all possible focus outlines and rings */
+  .ProseMirror *:focus,
+  .ProseMirror *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

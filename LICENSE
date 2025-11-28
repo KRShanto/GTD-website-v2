@@ -1,0 +1,50 @@
+PROPRIETARY LICENSE AGREEMENT
+
+Copyright (c) 2025 KR Shanto. All Rights Reserved.
+
+GTD Media Production Website
+A Next.js-based video production company website with AI chatbot & CMS functionality
+
+LICENSE TERMS:
+
+1. OWNERSHIP
+   This software and all associated code, designs, configurations, and intellectual property 
+   are the exclusive property of KR Shanto ("the Developer").
+
+2. RESTRICTED USE
+   - This codebase is built specifically for GTD Media Production
+   - No person, entity, or organization has the right to use, copy, modify, distribute, 
+     or reproduce this code for any other purpose
+   - The code may not be used to build similar websites, applications, or services
+   - No derivative works are permitted without explicit written consent
+
+3. PROHIBITED ACTIVITIES
+   The following activities are strictly prohibited:
+   - Copying or reproducing any part of this codebase
+   - Using this code as a template or starting point for other projects
+   - Distributing, selling, or licensing this code to third parties
+   - Reverse engineering or attempting to understand the code for replication purposes
+   - Creating derivative works based on this codebase
+
+4. THIRD-PARTY DEPENDENCIES
+   This project uses various open-source libraries and frameworks (Next.js, React, 
+   Tailwind CSS, etc.) which are governed by their respective licenses. This license 
+   applies only to the custom code and implementation specific to GTD Media Production.
+
+5. ENFORCEMENT
+   Any violation of this license may result in legal action. The Developer reserves 
+   the right to pursue all available legal remedies for unauthorized use.
+
+6. CONTACT
+   For licensing inquiries or permissions, contact KR Shanto.
+
+   Website: https://krshanto.com
+   LinkedIn: https://linkedin.com/in/krshanto
+   X (Twitter): https://x.com/KRShanto2005
+   Instagram: https://www.instagram.com/krshanto2005/
+
+This license is effective immediately and applies to all versions of this codebase.
+
+KR Shanto
+Developer & Owner
+GTD Media Production Website 
