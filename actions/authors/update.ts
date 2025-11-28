@@ -1,13 +1,20 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import {
   uploadAuthorImageServer,
-  deleteImageFromSupabaseServer,
-} from "@/lib/supabase/storage-server";
+  deleteImageFromSevallaServer,
+} from "@/lib/sevalla/storage-server";
 import { revalidatePath } from "next/cache";
 
-export async function updateAuthor(id: number, formData: FormData) {
+/**
+ * Updates an existing author in the database
+ * 
+ * @param id - The UUID string of the author to update
+ * @param formData - FormData containing updated author information
+ * @returns Object with either the updated author data or an error message
+ */
+export async function updateAuthor(id: string, formData: FormData) {
   try {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string | null;
@@ -17,27 +24,23 @@ export async function updateAuthor(id: number, formData: FormData) {
       return { error: "Name is required" };
     }
 
-    // Create Supabase client
-    const supabase = await createClient();
-
     // Get current author data
-    const { data: currentAuthor, error: fetchError } = await supabase
-      .from("authors")
-      .select("avatar_url")
-      .eq("id", id)
-      .single();
+    const currentAuthor = await prisma.author.findUnique({
+      where: { id },
+      select: { avatarUrl: true },
+    });
 
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!currentAuthor) {
+      return { error: "Author not found" };
     }
 
     // Prepare update data
     const updateData: {
       name: string;
       email?: string | null;
-      avatar_url?: string;
+      avatarUrl?: string;
     } = {
-      name,
+      name: name.trim(),
     };
 
     // Handle email update
@@ -58,30 +61,32 @@ export async function updateAuthor(id: number, formData: FormData) {
         };
       }
 
-      // Delete old avatar if exists
-      if (currentAuthor?.avatar_url) {
-        await deleteImageFromSupabaseServer(currentAuthor.avatar_url);
+      // Delete old avatar from Sevalla storage if it exists
+      if (currentAuthor.avatarUrl) {
+        await deleteImageFromSevallaServer(currentAuthor.avatarUrl);
       }
 
-      updateData.avatar_url = uploadResult.url;
+      updateData.avatarUrl = uploadResult.url;
     }
 
-    // Update author in database
-    const { data: author, error: updateError } = await supabase
-      .from("authors")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) {
-      return { error: updateError.message };
-    }
+    // Update author in database using Prisma
+    const author = await prisma.author.update({
+      where: { id },
+      data: updateData,
+    });
 
     revalidatePath("/admin/authors");
     return { author };
   } catch (error) {
     console.error("Update author error:", error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("Record to update not found")) {
+        return { error: "Author not found" };
+      }
+    }
+    
     return { error: "Failed to update author" };
   }
 }
