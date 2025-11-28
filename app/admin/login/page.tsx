@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(username, password);
 
       if (result?.error) {
         // Show specific error messages with reddish toast
@@ -32,7 +32,7 @@ export default function AdminLogin() {
           result.error.toLowerCase().includes("wrong")
         ) {
           toast.error(
-            "Invalid email or password. Please check your credentials and try again.",
+            "Invalid username or password. Please check your credentials and try again.",
             {
               duration: 5000,
               description:
@@ -123,15 +123,15 @@ export default function AdminLogin() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-300">
-                    Email
+                  <Label htmlFor="username" className="text-gray-300">
+                    Username
                   </Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                     className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500/50 focus:ring-orange-500/20"
                     disabled={isLoading}
@@ -172,7 +172,7 @@ export default function AdminLogin() {
 
                 <Button
                   type="submit"
-                  disabled={isLoading || !email || !password}
+                  disabled={isLoading || !username || !password}
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   {isLoading ? (
