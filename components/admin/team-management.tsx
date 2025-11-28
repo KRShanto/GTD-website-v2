@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Pencil, GripVertical, Trash2 } from "lucide-react";
-import { TeamMember } from "@/lib/types";
 import { deleteTeamMember } from "@/actions/team/delete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,11 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { reorderTeamMembers } from "@/actions/team/update";
-
-interface TeamManagementProps {
-  initialMembers?: TeamMember[];
-  error?: string;
-}
+import { Team } from "@/lib/generated/prisma/client";
 
 // Draggable card for team member
 function DraggableTeamMemberCard({
@@ -101,20 +96,21 @@ function DraggableTeamMemberCard({
 }
 
 export default function TeamManagement({
-  initialMembers = [],
-  error,
-}: TeamManagementProps) {
+  initialMembers,
+}: {
+  initialMembers: Team[];
+}) {
   const [loading, setLoading] = useState(false);
-  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
+  const [members, setMembers] = useState<Team[]>(initialMembers);
   const [searchTerm, setSearchTerm] = useState("");
-  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<Team | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
     setMembers(initialMembers);
   }, [initialMembers]);
 
-  const handleDelete = async (member: TeamMember) => {
+  const handleDelete = async (member: Team) => {
     setMemberToDelete(member);
   };
 
@@ -191,14 +187,6 @@ export default function TeamManagement({
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <>

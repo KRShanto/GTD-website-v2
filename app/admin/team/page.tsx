@@ -1,16 +1,14 @@
-import { Suspense } from "react";
 import TeamManagement from "@/components/admin/team-management";
-import { getTeamMembers } from "@/actions/team/read";
-import { getCurrentAdmin } from "@/actions/auth/user";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import AnimatedSection from "@/components/animated-section";
+import { prisma } from "@/lib/db";
 
-async function TeamContent() {
-  const { success, data: members, error } = await getTeamMembers();
+export default async function TeamPage() {
+  // const { success, data: members, error } = await getTeamMembers();
+  const members = await prisma.team.findMany();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
@@ -29,7 +27,7 @@ async function TeamContent() {
             </div>
             <div className="flex items-center gap-4">
               <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                Team Members ({success && members ? members.length : 0})
+                Team Members ({members ? members.length : 0})
               </Badge>
               <Link href="/admin/team/add">
                 <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
@@ -59,32 +57,9 @@ async function TeamContent() {
 
         {/* Team Management Component */}
         <AnimatedSection delay={100}>
-          <TeamManagement
-            initialMembers={success ? members : []}
-            error={error}
-          />
+          <TeamManagement initialMembers={members} />
         </AnimatedSection>
       </div>
     </div>
-  );
-}
-
-export default async function TeamPage() {
-  const admin = await getCurrentAdmin();
-
-  if (!admin) {
-    redirect("/admin/login");
-  }
-
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-          <div className="text-white text-xl">Loading team members...</div>
-        </div>
-      }
-    >
-      <TeamContent />
-    </Suspense>
   );
 }
