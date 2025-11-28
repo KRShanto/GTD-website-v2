@@ -1,43 +1,53 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { deleteImageFromSupabaseServer } from "@/lib/supabase/storage-server";
+import { prisma } from "@/lib/db";
+import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
 import { revalidatePath } from "next/cache";
 
-export async function deleteAuthor(id: number) {
+/**
+ * Deletes an author from the database
+ * 
+ * @param id - The UUID string of the author to delete
+ * @returns Object with success status or an error message
+ */
+export async function deleteAuthor(id: string) {
   try {
-    const supabase = await createClient();
+    // Get author data first to retrieve avatar URL
+    const author = await prisma.author.findUnique({
+      where: { id },
+      select: { avatarUrl: true },
+    });
 
-    // Get author data first to get avatar URL
-    const { data: author, error: fetchError } = await supabase
-      .from("authors")
-      .select("avatar_url")
-      .eq("id", id)
-      .single();
-
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!author) {
+      return { error: "Author not found" };
     }
 
-    // Delete from database
-    const { error: deleteError } = await supabase
-      .from("authors")
-      .delete()
-      .eq("id", id);
+    // Delete from database using Prisma
+    await prisma.author.delete({
+      where: { id },
+    });
 
-    if (deleteError) {
-      return { error: deleteError.message };
-    }
-
-    // Delete avatar from Supabase Storage
-    if (author?.avatar_url) {
-      await deleteImageFromSupabaseServer(author.avatar_url);
+    // Delete avatar from Sevalla storage if it exists
+    if (author.avatarUrl) {
+      await deleteImageFromSevallaServer(author.avatarUrl);
     }
 
     revalidatePath("/admin/authors");
     return { success: true };
   } catch (error) {
     console.error("Delete author error:", error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("Record to delete does not exist")) {
+        return { error: "Author not found" };
+      }
+      // Check for foreign key constraint (author has blogs)
+      if (error.message.includes("Foreign key constraint")) {
+        return { error: "Cannot delete author with existing blog posts" };
+      }
+    }
+    
     return { error: "Failed to delete author" };
   }
 }
