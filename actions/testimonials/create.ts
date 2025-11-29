@@ -1,11 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 
 /**
  * Creates a new testimonial in the database
- * 
+ *
  * @param formData - FormData containing testimonial information
  * @returns Object with either the created testimonial data or an error message
  */
@@ -53,6 +54,7 @@ export async function createTestimonial(formData: FormData) {
 
     // Revalidate paths
     revalidatePath("/admin/testimonials");
+    revalidateTag(CACHE_TAGS.TESTIMONIALS);
     revalidatePath("/");
 
     return { success: true, data: testimonial };
