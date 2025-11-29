@@ -18,7 +18,7 @@ import {
   X,
   GripVertical,
 } from "lucide-react";
-import { GalleryImage } from "@/lib/types";
+import { GalleryImage } from "@/lib/generated/prisma/client";
 import {
   deleteGalleryImage,
   deleteMultipleGalleryImages,
@@ -67,7 +67,6 @@ import { reorderGalleryImages } from "@/actions/gallery/images/update";
 
 interface GalleryImageManagementProps {
   initialImages: GalleryImage[];
-  error: string | null;
 }
 
 // Add type for DraggableImageCard props
@@ -75,9 +74,9 @@ interface DraggableImageCardProps {
   image: GalleryImage;
   index: number;
   selected: boolean;
-  onSelect: (imageId: number, checked: boolean) => void;
-  deletingId: number | null;
-  onDelete: (id: number, alt: string) => Promise<void>;
+  onSelect: (imageId: string, checked: boolean) => void;
+  deletingId: string | null;
+  onDelete: (id: string, alt: string) => Promise<void>;
   showAltText: boolean;
   onEdit?: () => void;
 }
@@ -133,7 +132,7 @@ function DraggableImageCard({
                 <DialogTrigger asChild>
                   <div className="relative w-full cursor-pointer group">
                     <Image
-                      src={image.image_url}
+                      src={image.imageUrl}
                       alt={image.alt}
                       width={300}
                       height={200}
@@ -154,7 +153,7 @@ function DraggableImageCard({
                   <div className="space-y-4">
                     <div className="relative aspect-video overflow-hidden rounded-lg">
                       <Image
-                        src={image.image_url}
+                        src={image.imageUrl}
                         alt={image.alt}
                         fill
                         className="object-contain"
@@ -234,16 +233,15 @@ function DraggableImageCard({
 
 export default function GalleryImageManagement({
   initialImages,
-  error,
 }: GalleryImageManagementProps) {
   const [images, setImages] = useState(initialImages);
-  const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingMultiple, setDeletingMultiple] = useState(false);
   const [showAltText, setShowAltText] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const handleSelect = (imageId: number, checked: boolean) => {
+  const handleSelect = (imageId: string, checked: boolean) => {
     const newSelected = new Set(selectedImages);
     if (checked) {
       newSelected.add(imageId);
@@ -261,7 +259,7 @@ export default function GalleryImageManagement({
     }
   };
 
-  const handleDelete = async (id: number, alt: string) => {
+  const handleDelete = async (id: string, alt: string) => {
     setDeletingId(id);
     try {
       const result = await deleteGalleryImage(id);
@@ -270,8 +268,7 @@ export default function GalleryImageManagement({
       } else {
         toast.success(`Image "${alt}" has been deleted`);
         setImages((prev) => prev.filter((image) => image.id !== id));
-        // Remove from Redis order list
-        await redis.lrem("gallery:images:order", 0, id);
+        // Redis order is now maintained via server action (reorderGalleryImages)
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -315,46 +312,6 @@ export default function GalleryImageManagement({
     await reorderGalleryImages(newImages.map((img) => img.id));
     toast.success("Image order updated");
   };
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-        <div className="border-b border-gray-800">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <Link
-                href="/admin"
-                className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="text-sm font-medium">Back to Dashboard</span>
-              </Link>
-              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                Gallery Image Management
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-6 py-16">
-          <Card className="bg-gradient-to-br from-gray-900 to-black border-red-500/20 max-w-2xl mx-auto">
-            <CardContent className="p-8 text-center">
-              <div className="text-red-400 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Error Loading Gallery Images
-              </h2>
-              <p className="text-gray-400 mb-6">{error}</p>
-              <Link href="/admin">
-                <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">

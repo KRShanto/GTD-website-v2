@@ -5,12 +5,10 @@ import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createMultipleGalleryImages } from "@/actions/gallery/images/create";
+import { createMultipleGalleryImagesFromFormData } from "@/actions/gallery/images/create";
 import { useToast } from "@/components/ui/use-toast";
-import { Progress } from "@/components/ui/progress";
 import { X, Upload, Image as ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { uploadGalleryImage } from "@/lib/supabase/storage";
 import { useRouter } from "next/navigation";
 
 interface ImageWithPreview extends File {
@@ -23,9 +21,6 @@ export default function MultipleImageUpload() {
   const router = useRouter();
   const [images, setImages] = useState<ImageWithPreview[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{
-    [key: string]: number;
-  }>({});
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setImages((prevImages) => [
@@ -79,53 +74,16 @@ export default function MultipleImageUpload() {
     }
 
     setLoading(true);
-    setUploadProgress(
-      images.reduce(
-        (acc, _, index) => ({
-          ...acc,
-          [index]: 0,
-        }),
-        {}
-      )
-    );
 
     try {
-      // Upload all images to Supabase
-      const uploadedImages = await Promise.all(
-        images.map(async (image, index) => {
-          // Upload image
-          const imageUploadResult = await uploadGalleryImage(
-            image,
-            image.name,
-            {
-              onProgress: (progress) => {
-                setUploadProgress((prev) => ({
-                  ...prev,
-                  [index]: progress,
-                }));
-              },
-              onError: (error) => {
-                toast({
-                  title: `Error uploading image ${image.name}`,
-                  description: error,
-                  variant: "destructive",
-                });
-              },
-            }
-          );
+      const formData = new FormData();
 
-          if (!imageUploadResult.success || !imageUploadResult.url) {
-            throw new Error(`Failed to upload image: ${image.name}`);
-          }
+      images.forEach((image) => {
+        formData.append("images", image);
+        formData.append("alts", image.alt || "");
+      });
 
-          return {
-            imageUrl: imageUploadResult.url,
-            alt: image.alt,
-          };
-        })
-      );
-
-      const result = await createMultipleGalleryImages(uploadedImages);
+      const result = await createMultipleGalleryImagesFromFormData(formData);
 
       if (result.error) {
         toast({
@@ -159,7 +117,6 @@ export default function MultipleImageUpload() {
       });
     } finally {
       setLoading(false);
-      setUploadProgress({});
     }
   };
 
@@ -194,7 +151,7 @@ export default function MultipleImageUpload() {
         <div className="space-y-6">
           {images.map((image, index) => (
             <Card
-              key={image.name}
+              key={index}
               className="bg-gradient-to-br from-gray-900 to-black border-orange-500/20"
             >
               <CardContent className="p-6 space-y-6">
@@ -254,16 +211,6 @@ export default function MultipleImageUpload() {
                   </div>
                 </div>
 
-                {/* Upload Progress */}
-                {uploadProgress[index] > 0 && uploadProgress[index] < 100 && (
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Upload Progress</Label>
-                    <Progress
-                      value={uploadProgress[index]}
-                      className="w-full"
-                    />
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}

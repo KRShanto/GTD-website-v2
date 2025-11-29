@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Save, Upload, Image as ImageIcon, X } from "lucide-react";
 import { createGalleryImage } from "@/actions/gallery/images/create";
 import { updateGalleryImage } from "@/actions/gallery/images/update";
-import { GalleryImage } from "@/lib/types";
+import { GalleryImage } from "@/lib/generated/prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";
@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 import MultipleImageUpload from "@/components/admin/multiple-image-upload";
 import { useToast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
-import { uploadGalleryImage } from "@/lib/supabase/storage";
 
 interface GalleryImageFormProps {
   image?: GalleryImage;
@@ -40,7 +39,7 @@ export default function GalleryImageForm({
     alt: image?.alt || "",
   });
   const [imagePreview, setImagePreview] = useState<string | null>(
-    image?.image_url || null
+    image?.imageUrl || null
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("single");
@@ -62,7 +61,7 @@ export default function GalleryImageForm({
 
   const handleImageRemove = () => {
     setSelectedFile(null);
-    setImagePreview(image?.image_url || null);
+    setImagePreview(image?.imageUrl || null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -99,36 +98,9 @@ export default function GalleryImageForm({
             return;
           }
         } else {
-          // New image selected, upload to Supabase first
-          const uploadResult = await uploadGalleryImage(
-            selectedFile,
-            selectedFile.name,
-            {
-              onProgress: (progress) => {
-                setUploadProgress(progress);
-              },
-              onError: (error) => {
-                useToastToast({
-                  title: "Error",
-                  description: error,
-                  variant: "destructive",
-                });
-              },
-            }
-          );
-
-          if (!uploadResult.success || !uploadResult.url) {
-            useToastToast({
-              title: "Error",
-              description: "Failed to upload image",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          // Update with new image URL
+          // New image selected - send file + alt to server action (Sevalla upload + Prisma update)
           const updateFormData = new FormData();
-          updateFormData.append("image_url", uploadResult.url);
+          updateFormData.append("image", selectedFile);
           updateFormData.append("alt", formData.alt);
           const result = await updateGalleryImage(image.id, updateFormData);
           if (result.error) {
@@ -141,39 +113,11 @@ export default function GalleryImageForm({
           }
         }
       } else {
-        // For create - upload to Supabase first
-        const uploadResult = await uploadGalleryImage(
-          selectedFile!,
-          selectedFile!.name,
-          {
-            onProgress: (progress) => {
-              setUploadProgress(progress);
-            },
-            onError: (error) => {
-              useToastToast({
-                title: "Error",
-                description: error,
-                variant: "destructive",
-              });
-            },
-          }
-        );
-
-        if (!uploadResult.success || !uploadResult.url) {
-          useToastToast({
-            title: "Error",
-            description: "Failed to upload image",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Create with image URL
-        const imageData = {
-          imageUrl: uploadResult.url,
-          alt: formData.alt,
-        };
-        const result = await createGalleryImage(imageData);
+        // For create - send file + alt directly to server action (Sevalla upload + Prisma create)
+        const fd = new FormData();
+        fd.append("image", selectedFile!);
+        fd.append("alt", formData.alt);
+        const result = await createGalleryImage(fd);
         if (result.error) {
           useToastToast({
             title: "Error",
