@@ -36,7 +36,7 @@ export default function AdminLogin() {
           toast.error(
             "Invalid username or password. Please check your credentials and try again.",
             {
-              duration: 5000,
+              duration: 3000,
               description:
                 "Make sure you're using the correct admin credentials.",
             }
