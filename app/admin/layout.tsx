@@ -16,22 +16,5 @@ export default async function AdminLayout({
 }) {
   await requireAuth();
 
-  return (
-    <>
-      {children}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#1f2937", // Dark background
-            border: "1px solid #374151",
-            color: "#f9fafb",
-          },
-          className: "admin-toast",
-          duration: 4000,
-        }}
-        theme="dark"
-      />
-    </>
-  );
+  return <>{children}</>;
 }
