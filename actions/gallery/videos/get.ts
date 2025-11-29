@@ -2,10 +2,7 @@ import { prisma } from "@/lib/db";
 import { GalleryVideo } from "@/lib/generated/prisma/client";
 import { redis } from "@/lib/redis";
 
-export async function getGalleryVideos(): Promise<{
-  videos: GalleryVideo[];
-  error: string | null;
-}> {
+export async function getGalleryVideos(): Promise<GalleryVideo[]> {
   try {
     // Get ordered IDs from Redis
     const orderedIds = await redis.lrange("gallery:videos:order", 0, -1);
@@ -16,7 +13,6 @@ export async function getGalleryVideos(): Promise<{
     });
 
     let videos: GalleryVideo[] = [];
-    let error: string | null = null;
 
     if (orderedIds && orderedIds.length > 0) {
       // Map videos by id for fast lookup
@@ -33,12 +29,11 @@ export async function getGalleryVideos(): Promise<{
     } else {
       // Fallback: just use Prisma result
       videos = allVideos;
-      error = null;
     }
 
-    return { videos, error };
+    return videos;
   } catch (error) {
     console.error("Unexpected error:", error);
-    return { videos: [], error: "An unexpected error occurred" };
+    return [];
   }
 }

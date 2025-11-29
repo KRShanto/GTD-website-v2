@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AnimatedSection from "@/components/animated-section";
 import Masonry from "react-masonry-css";
+import { GalleryImage, GalleryVideo } from "@/lib/generated/prisma/client";
 
 interface GalleryItem {
   type: "image" | "video";
@@ -16,11 +17,13 @@ interface GalleryItem {
 }
 
 interface GallerySectionClientProps {
-  galleryItems: GalleryItem[];
+  videos: GalleryVideo[];
+  images: GalleryImage[];
 }
 
 export default function GallerySectionClient({
-  galleryItems,
+  videos,
+  images,
 }: GallerySectionClientProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,22 +32,18 @@ export default function GallerySectionClient({
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
 
-  // Separate videos and images
-  const allVideoItems = galleryItems.filter((item) => item.type === "video");
-  const allImageItems = galleryItems.filter((item) => item.type === "image");
-
   // Get currently visible items
-  const visibleVideos = allVideoItems.slice(0, visibleVideoItems);
-  const visibleImages = allImageItems.slice(0, visibleImageItems);
+  const visibleVideos = videos.slice(0, visibleVideoItems);
+  const visibleImages = images.slice(0, visibleImageItems);
 
-  const hasMoreVideos = visibleVideoItems < allVideoItems.length;
-  const hasMoreImages = visibleImageItems < allImageItems.length;
+  const hasMoreVideos = visibleVideoItems < videos.length;
+  const hasMoreImages = visibleImageItems < images.length;
 
   // Load more functions
   const loadMoreVideos = () => {
     setIsLoadingVideos(true);
     setTimeout(() => {
-      setVisibleVideoItems((prev) => Math.min(prev + 8, allVideoItems.length));
+      setVisibleVideoItems((prev) => Math.min(prev + 8, videos.length));
       setIsLoadingVideos(false);
     }, 500);
   };
@@ -52,7 +51,7 @@ export default function GallerySectionClient({
   const loadMoreImages = () => {
     setIsLoadingImages(true);
     setTimeout(() => {
-      setVisibleImageItems((prev) => Math.min(prev + 8, allImageItems.length));
+      setVisibleImageItems((prev) => Math.min(prev + 8, images.length));
       setIsLoadingImages(false);
     }, 500);
   };
@@ -65,8 +64,8 @@ export default function GallerySectionClient({
     setSelectedItem(item);
     // Find the correct index in the combined array
     const combinedIndex = isVideo
-      ? galleryItems.findIndex((galleryItem) => galleryItem.src === item.src)
-      : galleryItems.findIndex((galleryItem) => galleryItem.src === item.src);
+      ? videos.findIndex((video) => video.videoUrl === item.src)
+      : images.findIndex((image) => image.imageUrl === item.src);
     setCurrentIndex(combinedIndex);
   };
 
@@ -75,17 +74,23 @@ export default function GallerySectionClient({
   };
 
   const goToPrevious = () => {
-    const newIndex =
-      currentIndex > 0 ? currentIndex - 1 : galleryItems.length - 1;
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : videos.length - 1;
     setCurrentIndex(newIndex);
-    setSelectedItem(galleryItems[newIndex]);
+    setSelectedItem({
+      type: "video",
+      src: videos[newIndex].videoUrl,
+      alt: videos[newIndex].alt,
+    });
   };
 
   const goToNext = () => {
-    const newIndex =
-      currentIndex < galleryItems.length - 1 ? currentIndex + 1 : 0;
+    const newIndex = currentIndex < videos.length - 1 ? currentIndex + 1 : 0;
     setCurrentIndex(newIndex);
-    setSelectedItem(galleryItems[newIndex]);
+    setSelectedItem({
+      type: "video",
+      src: videos[newIndex].videoUrl,
+      alt: videos[newIndex].alt,
+    });
   };
 
   // Masonry breakpoints
@@ -142,20 +147,26 @@ export default function GallerySectionClient({
                   <div className="mb-4">
                     <div
                       className="relative bg-zinc-800 rounded-lg overflow-hidden cursor-pointer group hover:scale-105 transition-transform duration-300"
-                      onClick={() => openLightbox(item, index, true)}
+                      onClick={() =>
+                        openLightbox(
+                          { type: "video", src: item.videoUrl, alt: item.alt },
+                          index,
+                          true
+                        )
+                      }
                       style={{ aspectRatio: "16/9" }}
                     >
                       <div className="relative w-full h-full">
-                        {item.thumbnail ? (
+                        {item.thumbnailUrl ? (
                           <Image
-                            src={item.thumbnail}
+                            src={item.thumbnailUrl || ""}
                             alt={item.alt}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
                           <video
-                            src={item.src}
+                            src={item.videoUrl}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                             muted
                             preload="metadata"
@@ -215,7 +226,13 @@ export default function GallerySectionClient({
                   <div className="mb-4">
                     <div
                       className="relative bg-zinc-800 rounded-lg overflow-hidden cursor-pointer group hover:scale-105 transition-transform duration-300"
-                      onClick={() => openLightbox(item, index, false)}
+                      onClick={() =>
+                        openLightbox(
+                          { type: "image", src: item.imageUrl, alt: item.alt },
+                          index,
+                          false
+                        )
+                      }
                       style={{
                         aspectRatio:
                           index % 3 === 0
@@ -226,7 +243,7 @@ export default function GallerySectionClient({
                       }}
                     >
                       <Image
-                        src={item.src}
+                        src={item.imageUrl}
                         alt={item.alt}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -309,7 +326,7 @@ export default function GallerySectionClient({
               </div>
               {/* Item counter */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full text-white text-sm">
-                {currentIndex + 1} / {galleryItems.length}
+                {currentIndex + 1} / {videos.length + images.length}
               </div>
             </div>
           </div>

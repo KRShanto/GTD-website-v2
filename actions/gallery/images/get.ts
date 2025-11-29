@@ -2,10 +2,7 @@ import { prisma } from "@/lib/db";
 import { GalleryImage } from "@/lib/generated/prisma/client";
 import { redis } from "@/lib/redis";
 
-export async function getGalleryImages(): Promise<{
-  images: GalleryImage[];
-  error: string | null;
-}> {
+export async function getGalleryImages(): Promise<GalleryImage[]> {
   try {
     // Get ordered IDs from Redis
     const orderedIds = await redis.lrange("gallery:images:order", 0, -1);
@@ -16,7 +13,6 @@ export async function getGalleryImages(): Promise<{
     });
 
     let images: GalleryImage[] = [];
-    let error: string | null = null;
 
     if (orderedIds && orderedIds.length > 0) {
       // Map images by id for fast lookup
@@ -28,17 +24,18 @@ export async function getGalleryImages(): Promise<{
         .filter(Boolean) as GalleryImage[];
 
       // Append any images not present in Redis order (e.g., newly created)
-      const missingImages = allImages.filter((img) => !orderedIds.includes(img.id));
+      const missingImages = allImages.filter(
+        (img) => !orderedIds.includes(img.id)
+      );
       images = [...images, ...missingImages];
     } else {
       // Fallback: just use Prisma result
       images = allImages;
-      error = null;
     }
 
-    return { images, error };
+    return images;
   } catch (error) {
     console.error("Unexpected error:", error);
-    return { images: [], error: "An unexpected error occurred" };
+    return [];
   }
 }
