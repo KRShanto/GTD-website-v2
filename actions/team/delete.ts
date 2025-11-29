@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/db";
 import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 
 /**
  * Deletes a single team member from the database
@@ -49,6 +50,7 @@ export async function deleteTeamMember(id: string) {
     // Revalidate Next.js cache paths
     revalidatePath("/admin/team");
     revalidatePath("/team");
+    revalidateTag(CACHE_TAGS.TEAM);
 
     return { success: true };
   } catch (error) {
@@ -108,6 +110,7 @@ export async function deleteMultipleTeamMembers(ids: string[]) {
     // Revalidate Next.js cache paths
     revalidatePath("/admin/team");
     revalidatePath("/team");
+    revalidateTag(CACHE_TAGS.TEAM);
 
     return { success: true };
   } catch (error) {
