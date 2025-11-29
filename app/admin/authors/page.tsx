@@ -1,6 +1,6 @@
 import AuthorManagement from "@/components/admin/author-management";
 import { getAuthors } from "@/actions/authors/read";
-import { Author } from "@/lib/generated/prisma/client";
+import { Author } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, UserPlus } from "lucide-react";

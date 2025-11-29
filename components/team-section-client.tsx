@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
 import AnimatedSection from "@/components/animated-section";
-import { Team } from "@/lib/generated/prisma/client";
+import { Team } from "@prisma/client";
 
 interface TeamSectionClientProps {
   teamMembers: Team[];

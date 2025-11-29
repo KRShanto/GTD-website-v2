@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { GalleryVideo } from "@/lib/generated/prisma/client";
+import { GalleryVideo } from "@prisma/client";
 import { redis } from "@/lib/redis";
 
 export async function getGalleryVideos(): Promise<GalleryVideo[]> {

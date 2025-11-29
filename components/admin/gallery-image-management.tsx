@@ -18,7 +18,7 @@ import {
   X,
   GripVertical,
 } from "lucide-react";
-import { GalleryImage } from "@/lib/generated/prisma/client";
+import { GalleryImage } from "@prisma/client";
 import {
   deleteGalleryImage,
   deleteMultipleGalleryImages,

@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Blog } from "@/lib/generated/prisma/client";
 
 /**
  * Fetches all blogs with their author information

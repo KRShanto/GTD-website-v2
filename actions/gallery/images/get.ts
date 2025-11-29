@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
-import { GalleryImage } from "@/lib/generated/prisma/client";
 import { redis } from "@/lib/redis";
+import { GalleryImage } from "@prisma/client";
 
 export async function getGalleryImages(): Promise<GalleryImage[]> {
   try {

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { GalleryImage } from "@/lib/generated/prisma/client";
+import { GalleryImage } from "@prisma/client";
 
 /**
  * Fetches all gallery images using Prisma with optional Redis-based ordering.

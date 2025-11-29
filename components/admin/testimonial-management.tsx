@@ -13,7 +13,7 @@ import {
   Quote,
   Star,
 } from "lucide-react";
-import { Testimonial } from "@/lib/generated/prisma/client";
+import { Testimonial } from "@prisma/client";
 import { deleteTestimonial } from "@/actions/testimonials/delete";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import AnimatedSection from "@/components/animated-section";
 import StickyNavigation from "@/components/sticky-navigation";
 import { CACHE_TAGS } from "@/lib/consts/cache-tags";
-import { Team } from "@/lib/generated/prisma/client";
+import { Team } from "@prisma/client";
 
 // Enable Partial Prerendering (PPR) - Next.js 15 default
 export const dynamic = "force-static";

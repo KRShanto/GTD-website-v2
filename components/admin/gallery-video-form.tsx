@@ -18,7 +18,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { createGalleryVideo } from "@/actions/gallery/videos/create";
 import { updateGalleryVideo } from "@/actions/gallery/videos/update";
-import { GalleryVideo } from "@/lib/generated/prisma/client";
+import { GalleryVideo } from "@prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";

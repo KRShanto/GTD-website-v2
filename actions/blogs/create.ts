@@ -1,11 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma } from "@/lib/generated/prisma/client";
-import {
-  uploadBlogImageServer,
-  deleteImageFromSevallaServer,
-} from "@/lib/sevalla/storage-server";
+import { uploadBlogImageServer } from "@/lib/sevalla/storage-server";
+import { JsonValue } from "@prisma/client/runtime/library";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -45,7 +42,7 @@ export async function createBlog(formData: FormData) {
     }
 
     // Parse keywords JSON if provided
-    let keywordsValue: Prisma.InputJsonValue | undefined = undefined;
+    let keywordsValue: JsonValue | undefined = undefined;
     if (keywords) {
       try {
         const parsed = JSON.parse(keywords);

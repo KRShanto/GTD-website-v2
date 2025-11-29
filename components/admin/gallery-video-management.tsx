@@ -19,7 +19,7 @@ import {
   Play,
   GripVertical,
 } from "lucide-react";
-import { GalleryVideo } from "@/lib/generated/prisma/client";
+import { GalleryVideo } from "@prisma/client";
 import {
   deleteGalleryVideo,
   deleteMultipleGalleryVideos,

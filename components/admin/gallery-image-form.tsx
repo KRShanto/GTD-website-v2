@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Save, Upload, Image as ImageIcon, X } from "lucide-react";
 import { createGalleryImage } from "@/actions/gallery/images/create";
 import { updateGalleryImage } from "@/actions/gallery/images/update";
-import { GalleryImage } from "@/lib/generated/prisma/client";
+import { GalleryImage } from "@prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";

@@ -15,7 +15,7 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
-import { Author } from "@/lib/generated/prisma/client";
+import { Author } from "@prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";

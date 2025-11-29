@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Quote, Star } from "lucide-react";
 import AnimatedSection from "@/components/animated-section";
-import { Testimonial } from "@/lib/generated/prisma/client";
+import { Testimonial } from "@prisma/client";
 
 interface TestimonialsSectionClientProps {
   testimonials: Testimonial[];

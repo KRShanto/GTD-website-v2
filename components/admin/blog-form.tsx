@@ -62,7 +62,7 @@ import { toast } from "sonner";
 import { createBlog } from "@/actions/blogs/create";
 import { updateBlog } from "@/actions/blogs/update";
 import { getAllAuthors } from "@/actions/authors/read";
-import { Blog } from "@/lib/generated/prisma/client";
+import { Blog } from "@prisma/client";
 
 type BlogWithAuthor = Blog & {
   author: {

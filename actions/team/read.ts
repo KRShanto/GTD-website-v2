@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { Team } from "@/lib/generated/prisma/client";
+import { Team } from "@prisma/client";
 
 /**
  * Fetches all team members from the database

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Testimonial } from "@/lib/generated/prisma/client";
+import { Testimonial } from "@prisma/client";
 
 /**
  * Fetches all testimonials from the database

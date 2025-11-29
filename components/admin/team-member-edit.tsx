@@ -1,6 +1,6 @@
 "use client";
 
-import { Team } from "@/lib/generated/prisma/client";
+import { Team } from "@prisma/client";
 import TeamMemberForm from "./team-member-form";
 import { useRouter } from "next/navigation";
 

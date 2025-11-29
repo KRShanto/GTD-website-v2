@@ -1,11 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Author } from "@/lib/generated/prisma/client";
 
 /**
  * Fetches all authors from the database
- * 
+ *
  * @returns Object with either the authors array or an error message
  */
 export async function getAuthors() {
@@ -23,7 +22,7 @@ export async function getAuthors() {
 
 /**
  * Fetches all authors (alias for compatibility)
- * 
+ *
  * @returns Object with authors array and error message
  */
 export async function getAllAuthors() {
@@ -41,7 +40,7 @@ export async function getAllAuthors() {
 
 /**
  * Fetches a single author by ID
- * 
+ *
  * @param id - The UUID string of the author to retrieve
  * @returns Object with either the author data or an error message
  */

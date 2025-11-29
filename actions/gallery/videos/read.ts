@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { GalleryVideo } from "@/lib/generated/prisma/client";
+import { GalleryVideo } from "@prisma/client";
 
 /**
  * Fetches all gallery videos using Prisma with optional Redis-based ordering.

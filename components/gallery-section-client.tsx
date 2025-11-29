@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AnimatedSection from "@/components/animated-section";
 import Masonry from "react-masonry-css";
-import { GalleryImage, GalleryVideo } from "@/lib/generated/prisma/client";
+import { GalleryImage, GalleryVideo } from "@prisma/client";
 
 interface GalleryItem {
   type: "image" | "video";

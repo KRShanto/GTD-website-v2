@@ -1,13 +1,16 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma } from "@/lib/generated/prisma/client";
-import { uploadBlogImageServer, deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
+import { Prisma } from "@prisma/client";
+import {
+  uploadBlogImageServer,
+  deleteImageFromSevallaServer,
+} from "@/lib/sevalla/storage-server";
 import { revalidatePath } from "next/cache";
 
 /**
  * Updates an existing blog post
- * 
+ *
  * @param id - Blog ID (UUID string)
  * @param formData - FormData containing blog fields and optional new featured image file
  * @returns Object with success status and data or error message
@@ -24,7 +27,9 @@ export async function updateBlog(id: string, formData: FormData) {
     const seoTitle = formData.get("seo_title") as string;
     const seoDescription = formData.get("seo_description") as string;
     const keywords = formData.get("keywords") as string;
-    const oldFeaturedImageUrl = formData.get("old_featured_image_url") as string;
+    const oldFeaturedImageUrl = formData.get(
+      "old_featured_image_url"
+    ) as string;
 
     if (!title || !content || !authorId) {
       return { error: "Title, content, and author are required" };
@@ -54,7 +59,10 @@ export async function updateBlog(id: string, formData: FormData) {
       try {
         const parsed = JSON.parse(keywords);
         // Ensure it's an array of strings
-        if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string")) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((k) => typeof k === "string")
+        ) {
           keywordsValue = parsed;
         } else {
           keywordsValue = [];

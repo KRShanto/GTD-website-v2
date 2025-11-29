@@ -22,7 +22,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Users, Mail, Edit3, Trash2, Calendar } from "lucide-react";
-import { Author } from "@/lib/generated/prisma/client";
+import { Author } from "@prisma/client";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";

@@ -34,7 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { reorderTeamMembers } from "@/actions/team/update";
-import { Team } from "@/lib/generated/prisma/client";
+import { Team } from "@prisma/client";
 
 // Draggable card for team member
 function DraggableTeamMemberCard({

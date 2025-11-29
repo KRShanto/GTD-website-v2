@@ -23,7 +23,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteBlog } from "@/actions/blogs/delete";
-import { Blog } from "@/lib/generated/prisma/client";
+import { Blog } from "@prisma/client";
 
 type BlogWithAuthor = Blog & {
   author: {
