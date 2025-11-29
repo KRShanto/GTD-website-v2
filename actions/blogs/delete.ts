@@ -1,22 +1,32 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { deleteImageFromSupabaseServer } from "@/lib/supabase/storage-server";
+import { prisma } from "@/lib/db";
+import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
 import { revalidatePath } from "next/cache";
 
-export async function deleteBlog(id: number, featuredImageUrl?: string) {
+/**
+ * Deletes a blog post and its featured image
+ * 
+ * @param id - Blog ID (UUID string)
+ * @param featuredImageUrl - Optional featured image URL to delete from storage
+ * @returns Object with success status or error message
+ */
+export async function deleteBlog(id: string, featuredImageUrl?: string) {
   try {
-    const supabase = await createClient();
-    // Delete from Supabase
-    const { error } = await supabase.from("blogs").delete().eq("id", id);
-    if (error) return { error: error.message };
-    // Delete featured image from Supabase if provided
+    // Delete from Prisma
+    await prisma.blog.delete({
+      where: { id },
+    });
+
+    // Delete featured image from Sevalla if provided
     if (featuredImageUrl) {
-      await deleteImageFromSupabaseServer(featuredImageUrl);
+      await deleteImageFromSevallaServer(featuredImageUrl);
     }
+
     revalidatePath("/admin/blog");
     return { success: true };
   } catch (error) {
+    console.error("Delete blog error:", error);
     return { error: "Failed to delete blog" };
   }
 }
