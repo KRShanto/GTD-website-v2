@@ -1,11 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 
 /**
  * Updates an existing testimonial in the database
- * 
+ *
  * @param id - The UUID string of the testimonial to update
  * @param formData - FormData containing updated testimonial information
  * @returns Object with either the updated testimonial data or an error message
@@ -55,19 +56,20 @@ export async function updateTestimonial(id: string, formData: FormData) {
 
     // Revalidate paths
     revalidatePath("/admin/testimonials");
+    revalidateTag(CACHE_TAGS.TESTIMONIALS);
     revalidatePath("/");
 
     return { success: true, data: testimonial };
   } catch (error) {
     console.error("Update testimonial error:", error);
-    
+
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes("Record to update not found")) {
         return { error: "Testimonial not found" };
       }
     }
-    
+
     return { error: "An unexpected error occurred" };
   }
 }
