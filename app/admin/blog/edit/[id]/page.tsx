@@ -1,5 +1,5 @@
 import BlogForm from "@/components/admin/blog-form";
-import { getCurrentAdmin } from "@/actions/auth/user";
+import { getUser } from "@/lib/auth";
 import { getBlogById } from "@/actions/blogs/read";
 import { redirect, notFound } from "next/navigation";
 
@@ -8,14 +8,19 @@ interface EditBlogPageProps {
 }
 
 export default async function EditBlogPage({ params }: EditBlogPageProps) {
-  const admin = await getCurrentAdmin();
-  if (!admin) redirect("/admin/login");
+  const user = await getUser();
+  if (!user) redirect("/admin/login");
 
   const { id } = await params;
 
-  const blogId = parseInt(id);
-  if (isNaN(blogId)) notFound();
-  const { blog, error } = await getBlogById(blogId);
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    notFound();
+  }
+
+  const { blog, error } = await getBlogById(id);
   if (error || !blog) notFound();
+  
   return <BlogForm blog={blog} isEditing={true} />;
 }

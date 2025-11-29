@@ -1,9 +1,10 @@
 import BlogForm from "@/components/admin/blog-form";
-import { getCurrentAdmin } from "@/actions/auth/user";
+import { getUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function AddBlogPage() {
-  const admin = await getCurrentAdmin();
-  if (!admin) redirect("/admin/login");
+  const user = await getUser();
+  if (!user) redirect("/admin/login");
+  
   return <BlogForm />;
 }

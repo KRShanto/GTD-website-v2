@@ -23,26 +23,30 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteBlog } from "@/actions/blogs/delete";
+import { Blog } from "@/lib/generated/prisma/client";
 
-export default function BlogDashboard({
-  blogs,
-  error,
-}: {
-  blogs: any[];
-  error: string | null;
-}) {
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+type BlogWithAuthor = Blog & {
+  author: {
+    id: string;
+    name: string;
+    email: string | null;
+    avatarUrl: string;
+  };
+};
+
+export default function BlogDashboard({ blogs }: { blogs: BlogWithAuthor[] }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [blogList, setBlogList] = useState(blogs);
 
-  const handleDelete = async (id: number, featuredImageUrl?: string) => {
+  const handleDelete = async (id: string, featuredImageUrl?: string | null) => {
     setDeletingId(id);
     try {
-      const result = await deleteBlog(id, featuredImageUrl);
+      const result = await deleteBlog(id, featuredImageUrl || undefined);
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success("Blog deleted successfully");
-        setBlogList((prev: any[]) => prev.filter((b) => b.id !== id));
+        setBlogList((prev) => prev.filter((b) => b.id !== id));
       }
     } catch (error) {
       toast.error("Failed to delete blog");
@@ -50,10 +54,6 @@ export default function BlogDashboard({
       setDeletingId(null);
     }
   };
-
-  if (error) {
-    return <div className="text-red-400 p-8">Error loading blogs: {error}</div>;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
@@ -86,10 +86,10 @@ export default function BlogDashboard({
                 </TableCell>
                 <TableCell className="text-gray-300 flex items-center gap-2">
                   <User className="w-4 h-4 text-orange-400" />
-                  {blog.authors?.name || "-"}
+                  {blog.author?.name || "-"}
                 </TableCell>
                 <TableCell>
-                  {blog.is_published ? (
+                  {blog.isPublished ? (
                     <Badge className="bg-green-600/20 text-green-400 border-green-500/30 flex items-center gap-1">
                       <CheckCircle className="w-4 h-4" /> Published
                     </Badge>
@@ -102,7 +102,7 @@ export default function BlogDashboard({
                 <TableCell className="text-gray-400">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4 inline-block text-orange-400" />
-                    {new Date(blog.created_at).toLocaleDateString("en-US", {
+                    {new Date(blog.createdAt).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
@@ -126,7 +126,7 @@ export default function BlogDashboard({
                       className="bg-gray-800 border-red-500/30 text-red-400 hover:bg-red-700 hover:border-red-500/60 hover:text-red-200"
                       disabled={deletingId === blog.id}
                       onClick={() =>
-                        handleDelete(blog.id, blog.featured_image_url)
+                        handleDelete(blog.id, blog.featuredImageUrl)
                       }
                     >
                       <Trash2 className="w-4 h-4" />

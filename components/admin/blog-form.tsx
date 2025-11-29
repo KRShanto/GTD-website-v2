@@ -59,32 +59,46 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadBlogImage } from "@/lib/supabase/storage";
 import { createBlog } from "@/actions/blogs/create";
 import { updateBlog } from "@/actions/blogs/update";
 import { getAllAuthors } from "@/actions/authors/read";
+import { Blog } from "@/lib/generated/prisma/client";
+
+type BlogWithAuthor = Blog & {
+  author: {
+    id: string;
+    name: string;
+    email: string | null;
+    avatarUrl: string;
+  };
+};
 
 interface BlogFormProps {
-  blog?: any;
+  blog?: BlogWithAuthor;
   isEditing?: boolean;
 }
 
 export default function BlogForm({ blog, isEditing = false }: BlogFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [authors, setAuthors] = useState<any[]>([]);
-  const [keywords, setKeywords] = useState<string[]>(
-    blog?.keywords ? (Array.isArray(blog.keywords) ? blog.keywords : []) : []
-  );
+  const [keywords, setKeywords] = useState<string[]>(() => {
+    if (!blog?.keywords) return [];
+    if (Array.isArray(blog.keywords)) {
+      // Type guard: ensure all items are strings
+      return blog.keywords.filter((k): k is string => typeof k === "string");
+    }
+    return [];
+  });
   const [newKeyword, setNewKeyword] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: blog?.title || "",
     description: blog?.description || "",
-    author_id: blog?.author_id?.toString() || "",
-    is_published: blog?.is_published || false,
-    seo_title: blog?.seo_title || "",
-    seo_description: blog?.seo_description || "",
+    author_id: blog?.authorId || "",
+    is_published: blog?.isPublished || false,
+    seo_title: blog?.seoTitle || "",
+    seo_description: blog?.seoDescription || "",
     featured_image: null as File | null,
   });
 
@@ -443,18 +457,44 @@ export default function BlogForm({ blog, isEditing = false }: BlogFormProps) {
     if (!editor) return;
 
     try {
-      const result = await uploadBlogImage(
-        file,
-        file.name,
-        "images"
-      );
-      if (result.success && result.url) {
-        editor.chain().focus().setImage({ src: result.url }).run();
-        toast.success("Image uploaded successfully");
-      } else {
-        toast.error(result.error || "Failed to upload image");
+      // 1) Get presigned URL from API
+      const presignRes = await fetch("/api/sevalla/blog-image-presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "image/jpeg",
+          folder: "images",
+        }),
+      });
+
+      if (!presignRes.ok) {
+        const errorData = await presignRes.json();
+        toast.error(errorData.error || "Failed to get upload URL");
+        return;
       }
+
+      const { uploadUrl, publicUrl } = await presignRes.json();
+
+      // 2) Upload image directly to Sevalla
+      const uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        toast.error("Failed to upload image to storage");
+        return;
+      }
+
+      // 3) Insert image into editor
+      editor.chain().focus().setImage({ src: publicUrl }).run();
+      toast.success("Image uploaded successfully");
     } catch (error) {
+      console.error("Image upload error:", error);
       toast.error("Failed to upload image");
     }
   };
@@ -501,7 +541,7 @@ export default function BlogForm({ blog, isEditing = false }: BlogFormProps) {
     if (isEditing && blog) {
       submitFormData.append(
         "old_featured_image_url",
-        blog.featured_image_url || ""
+        blog.featuredImageUrl || ""
       );
     }
 
@@ -961,9 +1001,9 @@ export default function BlogForm({ blog, isEditing = false }: BlogFormProps) {
                         }
                         className="bg-gray-700 border-gray-600 text-white file:bg-orange-500 file:text-white file:border-0 file:rounded-md"
                       />
-                      {blog?.featured_image_url && (
+                      {blog?.featuredImageUrl && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Current: {blog.featured_image_url.split("/").pop()}
+                          Current: {blog.featuredImageUrl.split("/").pop()}
                         </p>
                       )}
                     </div>
