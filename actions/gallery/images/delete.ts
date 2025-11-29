@@ -1,41 +1,39 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { deleteImageFromSupabaseServer } from "@/lib/supabase/storage-server";
 import { revalidatePath } from "next/cache";
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/db";
+import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
 
-export async function deleteGalleryImage(id: number) {
+/**
+ * Deletes a single gallery image:
+ * - removes DB record via Prisma
+ * - removes its ID from Redis order
+ * - deletes the image from Sevalla storage
+ */
+export async function deleteGalleryImage(id: string) {
   try {
-    const supabase = await createClient();
-
     // Get image data first to get URL
-    const { data: image, error: fetchError } = await supabase
-      .from("gallery-images")
-      .select("image_url")
-      .eq("id", id)
-      .single();
+    const image = await prisma.galleryImage.findUnique({
+      where: { id },
+      select: { imageUrl: true },
+    });
 
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!image) {
+      return { error: "Gallery image not found" };
     }
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("gallery-images")
-      .delete()
-      .eq("id", id);
-
-    if (deleteError) {
-      return { error: deleteError.message };
-    }
+    await prisma.galleryImage.delete({
+      where: { id },
+    });
 
     // Remove from Redis order list
     await redis.lrem("gallery:images:order", 0, id);
 
-    // Delete image from Supabase Storage
-    if (image?.image_url) {
-      await deleteImageFromSupabaseServer(image.image_url);
+    // Delete image from Sevalla Storage
+    if (image.imageUrl) {
+      await deleteImageFromSevallaServer(image.imageUrl);
     }
 
     revalidatePath("/admin/gallery/images");
@@ -46,34 +44,35 @@ export async function deleteGalleryImage(id: number) {
   }
 }
 
-export async function deleteMultipleGalleryImages(ids: number[]) {
+/**
+ * Deletes multiple gallery images at once using Prisma and Sevalla.
+ */
+export async function deleteMultipleGalleryImages(ids: string[]) {
   try {
-    const supabase = await createClient();
+    if (!ids.length) {
+      return { error: "No images selected for deletion" };
+    }
 
     // Get image URLs first
-    const { data: images, error: fetchError } = await supabase
-      .from("gallery-images")
-      .select("image_url")
-      .in("id", ids);
-
-    if (fetchError) {
-      return { error: fetchError.message };
-    }
+    const images = await prisma.galleryImage.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, imageUrl: true },
+    });
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("gallery-images")
-      .delete()
-      .in("id", ids);
+    await prisma.galleryImage.deleteMany({
+      where: { id: { in: ids } },
+    });
 
-    if (deleteError) {
-      return { error: deleteError.message };
+    // Remove all IDs from Redis order list
+    for (const id of ids) {
+      await redis.lrem("gallery:images:order", 0, id);
     }
 
-    // Delete all images from Supabase Storage
+    // Delete all images from Sevalla Storage
     const deletePromises = images
-      .filter((image) => image.image_url)
-      .map((image) => deleteImageFromSupabaseServer(image.image_url));
+      .filter((image) => image.imageUrl)
+      .map((image) => deleteImageFromSevallaServer(image.imageUrl));
 
     await Promise.all(deletePromises);
 
