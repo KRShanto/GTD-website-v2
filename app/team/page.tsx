@@ -2,24 +2,11 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import AnimatedSection from "@/components/animated-section";
 import StickyNavigation from "@/components/sticky-navigation";
-import { getTeamMembers } from "@/actions/team/get";
-import { TeamMember } from "@/lib/types";
+import { getTeamMembers } from "@/actions/team/read";
 
 export default async function TeamPage() {
   // Fetch data from Supabase
-  const { members, error } = await getTeamMembers();
-
-  // Transform data to match the expected format
-  const teamMembers = members.map((member: TeamMember) => ({
-    name: member.name,
-    title: member.title,
-    bio: member.bio,
-    image: member.image_url,
-    slug: member.name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, ""),
-  }));
+  const members = await getTeamMembers();
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -39,20 +26,9 @@ export default async function TeamPage() {
             </div>
           </AnimatedSection>
 
-          {/* Error Message */}
-          {error && (
-            <AnimatedSection>
-              <div className="text-center mb-16">
-                <p className="text-red-400">
-                  Error loading team members: {error}
-                </p>
-              </div>
-            </AnimatedSection>
-          )}
-
           {/* Team Members */}
           <div className="space-y-8">
-            {teamMembers.map((member, index) => (
+            {members.map((member, index) => (
               <AnimatedSection key={index} delay={index * 100}>
                 <div id={member.slug}>
                   <Card className="bg-gradient-to-br from-gray-900 to-black border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
@@ -62,7 +38,7 @@ export default async function TeamPage() {
                         <div className="flex-shrink-0 mx-auto md:mx-0">
                           <div className="relative w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-full border-4 border-orange-500">
                             <Image
-                              src={member.image}
+                              src={member.imageUrl || ""}
                               alt={member.name}
                               fill
                               className="object-cover"
