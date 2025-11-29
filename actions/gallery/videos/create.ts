@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import {
@@ -29,7 +30,7 @@ export async function createGalleryVideo(videoData: GalleryVideoData) {
     await redis.lpush("gallery:videos:order", created.id);
 
     revalidatePath("/admin/gallery/videos");
-    revalidatePath("/");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
 
     return { success: true, data: created };
   } catch (error) {
@@ -83,7 +84,7 @@ export async function createMultipleGalleryVideos(
 
     // Revalidate paths
     revalidatePath("/admin/gallery/videos");
-    revalidatePath("/");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
 
     return { success: true, data: createdVideos, count: videosData.length };
   } catch (error) {
@@ -194,7 +195,7 @@ export async function createMultipleGalleryVideosFromFormData(
     }
 
     revalidatePath("/admin/gallery/videos");
-    revalidatePath("/");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
 
     return {
       success: true,
@@ -237,9 +238,7 @@ export async function createGalleryVideoFromFormData(formData: FormData) {
 
     if (!videoUpload.success || !videoUpload.url) {
       return {
-        error:
-          videoUpload.error ||
-          `Failed to upload video: ${videoFile.name}`,
+        error: videoUpload.error || `Failed to upload video: ${videoFile.name}`,
       };
     }
 
@@ -272,7 +271,7 @@ export async function createGalleryVideoFromFormData(formData: FormData) {
     await redis.lpush("gallery:videos:order", created.id);
 
     revalidatePath("/admin/gallery/videos");
-    revalidatePath("/");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
 
     return { success: true, data: created };
   } catch (error) {
