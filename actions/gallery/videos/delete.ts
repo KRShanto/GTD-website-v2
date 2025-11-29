@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import {
@@ -40,6 +41,7 @@ export async function deleteGalleryVideo(id: string) {
     }
 
     revalidatePath("/admin/gallery/videos");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
     return { success: true };
   } catch (error) {
     console.error("Delete gallery video error:", error);
@@ -88,6 +90,7 @@ export async function deleteMultipleGalleryVideos(ids: string[]) {
     await Promise.all(deletePromises);
 
     revalidatePath("/admin/gallery/videos");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
     return { success: true };
   } catch (error) {
     console.error("Delete multiple gallery videos error:", error);
