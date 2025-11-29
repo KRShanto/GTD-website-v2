@@ -1,14 +1,22 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import {
-  uploadGalleryImageServer,
-  deleteImageFromSupabaseServer,
-} from "@/lib/supabase/storage-server";
 import { revalidatePath } from "next/cache";
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/db";
+import {
+  uploadGalleryImageServer,
+  deleteImageFromSevallaServer,
+} from "@/lib/sevalla/storage-server";
 
-export async function updateGalleryImage(id: number, formData: FormData) {
+/**
+ * Updates a single gallery image record and optionally replaces the image file.
+ *
+ * Expected FormData fields:
+ * - "alt": string (required)
+ * - "image": File (optional)
+ * - "image_url": string (optional, for compatibility if caller already uploaded)
+ */
+export async function updateGalleryImage(id: string, formData: FormData) {
   try {
     const alt = formData.get("alt") as string;
     const image = formData.get("image") as File | null;
@@ -18,22 +26,18 @@ export async function updateGalleryImage(id: number, formData: FormData) {
       return { error: "Alt text is required" };
     }
 
-    // Create Supabase client
-    const supabase = await createClient();
+    // Get current image data from Prisma
+    const currentImage = await prisma.galleryImage.findUnique({
+      where: { id },
+      select: { imageUrl: true },
+    });
 
-    // Get current image data
-    const { data: currentImage, error: fetchError } = await supabase
-      .from("gallery-images")
-      .select("image_url")
-      .eq("id", id)
-      .single();
-
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!currentImage) {
+      return { error: "Gallery image not found" };
     }
 
     // Prepare update data
-    const updateData: { alt: string; image_url?: string } = { alt };
+    const updateData: { alt: string; imageUrl?: string } = { alt };
 
     // Handle image update if new file is provided (server-side upload)
     if (image) {
@@ -46,31 +50,25 @@ export async function updateGalleryImage(id: number, formData: FormData) {
       }
 
       // Delete old image if exists
-      if (currentImage?.image_url) {
-        await deleteImageFromSupabaseServer(currentImage.image_url);
+      if (currentImage?.imageUrl) {
+        await deleteImageFromSevallaServer(currentImage.imageUrl);
       }
 
-      updateData.image_url = uploadResult.url;
+      updateData.imageUrl = uploadResult.url;
     } else if (image_url) {
       // Handle case where image was uploaded client-side and URL is provided
       // Delete old image if exists and URL is different
-      if (currentImage?.image_url && currentImage.image_url !== image_url) {
-        await deleteImageFromSupabaseServer(currentImage.image_url);
+      if (currentImage?.imageUrl && currentImage.imageUrl !== image_url) {
+        await deleteImageFromSevallaServer(currentImage.imageUrl);
       }
-      updateData.image_url = image_url;
+      updateData.imageUrl = image_url;
     }
 
-    // Update in database
-    const { data: galleryImage, error: updateError } = await supabase
-      .from("gallery-images")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) {
-      return { error: updateError.message };
-    }
+    // Update in database via Prisma
+    const galleryImage = await prisma.galleryImage.update({
+      where: { id },
+      data: updateData,
+    });
 
     revalidatePath("/admin/gallery/images");
     return { image: galleryImage };
@@ -81,26 +79,20 @@ export async function updateGalleryImage(id: number, formData: FormData) {
 }
 
 export async function updateMultipleGalleryImages(
-  updates: { id: number; alt: string; position: number }[]
+  updates: { id: string; alt: string; position: number }[]
 ) {
   try {
-    const supabase = await createClient();
-
-    // Update all images in database
-    const { data: galleryImages, error } = await supabase
-      .from("gallery-images")
-      .upsert(
-        updates.map((update) => ({
-          id: update.id,
+    // Bulk update of alt text only using Prisma transaction
+    const updatePromises = updates.map((update) =>
+      prisma.galleryImage.update({
+        where: { id: update.id },
+        data: {
           alt: update.alt,
-          position: update.position,
-        }))
-      )
-      .select();
+        },
+      })
+    );
 
-    if (error) {
-      return { error: error.message };
-    }
+    const galleryImages = await Promise.all(updatePromises);
 
     revalidatePath("/admin/gallery/images");
     return { images: galleryImages };
@@ -110,7 +102,10 @@ export async function updateMultipleGalleryImages(
   }
 }
 
-export async function reorderGalleryImages(ids: number[]) {
+/**
+ * Persists gallery image ordering in Redis using Prisma UUID string IDs.
+ */
+export async function reorderGalleryImages(ids: string[]) {
   await redis.del("gallery:images:order");
   if (ids.length > 0) {
     await redis.rpush("gallery:images:order", ...ids);
