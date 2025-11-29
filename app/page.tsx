@@ -11,6 +11,10 @@ import Footer from "@/components/footer";
 import GlobalStyles from "@/components/global-styles";
 import Chatbot from "@/components/chatbot";
 
+// Enable Partial Prerendering (PPR) - Next.js 15 default
+export const dynamic = "force-static";
+export const revalidate = false; // Use cache tags for revalidation instead
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
