@@ -1,13 +1,19 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { uploadBlogImageServer, deleteImageFromSupabaseServer } from "@/lib/supabase/storage-server";
+import { prisma } from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma/client";
+import { uploadBlogImageServer, deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
 import { revalidatePath } from "next/cache";
 
-export async function updateBlog(id: number, formData: FormData) {
+/**
+ * Updates an existing blog post
+ * 
+ * @param id - Blog ID (UUID string)
+ * @param formData - FormData containing blog fields and optional new featured image file
+ * @returns Object with success status and data or error message
+ */
+export async function updateBlog(id: string, formData: FormData) {
   try {
-    const supabase = await createClient();
-
     // Extract form data
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
@@ -38,35 +44,55 @@ export async function updateBlog(id: number, formData: FormData) {
       featuredImageUrl = uploadResult.url!;
       // Delete old image if replaced
       if (oldFeaturedImageUrl && oldFeaturedImageUrl !== featuredImageUrl) {
-        await deleteImageFromSupabaseServer(oldFeaturedImageUrl);
+        await deleteImageFromSevallaServer(oldFeaturedImageUrl);
       }
     }
 
-    // Update in Supabase
-    const { data, error } = await supabase
-      .from("blogs")
-      .update({
-        title,
-        description,
-        content,
-        featured_image_url: featuredImageUrl,
-        author_id: Number(authorId),
-        is_published: isPublished,
-        seo_title: seoTitle,
-        seo_description: seoDescription,
-        keywords: keywords ? JSON.parse(keywords) : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      return { error: error.message };
+    // Parse keywords JSON if provided
+    let keywordsValue: Prisma.InputJsonValue | undefined = undefined;
+    if (keywords) {
+      try {
+        const parsed = JSON.parse(keywords);
+        // Ensure it's an array of strings
+        if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string")) {
+          keywordsValue = parsed;
+        } else {
+          keywordsValue = [];
+        }
+      } catch {
+        // If parsing fails, treat as empty array
+        keywordsValue = [];
+      }
     }
 
+    // Update in Prisma
+    const blog = await prisma.blog.update({
+      where: { id },
+      data: {
+        title,
+        description: description || null,
+        content,
+        featuredImageUrl,
+        authorId,
+        isPublished,
+        seoTitle: seoTitle || null,
+        seoDescription: seoDescription || null,
+        keywords: keywordsValue,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
     revalidatePath("/admin/blog");
-    return { success: true, data };
+    return { success: true, data: blog };
   } catch (error) {
     console.error("Update blog error:", error);
     return { error: "An unexpected error occurred" };
