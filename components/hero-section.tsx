@@ -26,7 +26,8 @@ export default function HeroSection() {
         >
           {/* TODO: upload to sevalla */}
           <source
-            src="https://firebasestorage.googleapis.com/v0/b/gtd-website-25.firebasestorage.app/o/hero.mp4?alt=media&token=27bc3a0e-6b4e-468e-b994-baa8e2f7329e"
+            // src="https://firebasestorage.googleapis.com/v0/b/gtd-website-25.firebasestorage.app/o/hero.mp4?alt=media&token=27bc3a0e-6b4e-468e-b994-baa8e2f7329e"
+            src="https://gtd-website-39lds.sevalla.storage/1764430768690-a5blxgf-hero.mp4"
             type="video/mp4"
           />
         </video>
