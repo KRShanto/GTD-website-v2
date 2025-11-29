@@ -1,47 +1,42 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import {
-  deleteImageFromFirebase,
-  deleteVideoFromFirebase,
-} from "@/lib/firebase/storage";
 import { revalidatePath } from "next/cache";
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/db";
+import {
+  deleteVideoFromSevallaServer,
+  deleteImageFromSevallaServer,
+} from "@/lib/sevalla/storage-server";
 
-export async function deleteGalleryVideo(id: number) {
+export async function deleteGalleryVideo(id: string) {
   try {
-    const supabase = await createClient();
-
     // Get video data first to get URLs
-    const { data: video, error: fetchError } = await supabase
-      .from("gallery-videos")
-      .select("video_url, thumbnail_url")
-      .eq("id", id)
-      .single();
+    const video = await prisma.galleryVideo.findUnique({
+      where: { id },
+      select: {
+        videoUrl: true,
+        thumbnailUrl: true,
+      },
+    });
 
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!video) {
+      return { error: "Gallery video not found" };
     }
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("gallery-videos")
-      .delete()
-      .eq("id", id);
-
-    if (deleteError) {
-      return { error: deleteError.message };
-    }
+    await prisma.galleryVideo.delete({
+      where: { id },
+    });
 
     // Remove from Redis order list
     await redis.lrem("gallery:videos:order", 0, id);
 
-    // Delete video and thumbnail from Firebase Storage
-    if (video?.video_url) {
-      await deleteVideoFromFirebase(video.video_url);
+    // Delete video and thumbnail from Sevalla Storage
+    if (video.videoUrl) {
+      await deleteVideoFromSevallaServer(video.videoUrl);
     }
-    if (video?.thumbnail_url) {
-      await deleteImageFromFirebase(video.thumbnail_url);
+    if (video.thumbnailUrl) {
+      await deleteImageFromSevallaServer(video.thumbnailUrl);
     }
 
     revalidatePath("/admin/gallery/videos");
@@ -52,38 +47,40 @@ export async function deleteGalleryVideo(id: number) {
   }
 }
 
-export async function deleteMultipleGalleryVideos(ids: number[]) {
+export async function deleteMultipleGalleryVideos(ids: string[]) {
   try {
-    const supabase = await createClient();
+    if (!ids.length) {
+      return { error: "No videos selected for deletion" };
+    }
 
     // Get video URLs first
-    const { data: videos, error: fetchError } = await supabase
-      .from("gallery-videos")
-      .select("video_url, thumbnail_url")
-      .in("id", ids);
-
-    if (fetchError) {
-      return { error: fetchError.message };
-    }
+    const videos = await prisma.galleryVideo.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        videoUrl: true,
+        thumbnailUrl: true,
+      },
+    });
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("gallery-videos")
-      .delete()
-      .in("id", ids);
+    await prisma.galleryVideo.deleteMany({
+      where: { id: { in: ids } },
+    });
 
-    if (deleteError) {
-      return { error: deleteError.message };
+    // Remove IDs from Redis
+    for (const id of ids) {
+      await redis.lrem("gallery:videos:order", 0, id);
     }
 
-    // Delete all videos and thumbnails from Firebase Storage
+    // Delete all videos and thumbnails from Sevalla Storage
     const deletePromises = videos.flatMap((video) => {
-      const promises = [];
-      if (video.video_url) {
-        promises.push(deleteVideoFromFirebase(video.video_url));
+      const promises: Promise<boolean>[] = [];
+      if (video.videoUrl) {
+        promises.push(deleteVideoFromSevallaServer(video.videoUrl));
       }
-      if (video.thumbnail_url) {
-        promises.push(deleteImageFromFirebase(video.thumbnail_url));
+      if (video.thumbnailUrl) {
+        promises.push(deleteImageFromSevallaServer(video.thumbnailUrl));
       }
       return promises;
     });
