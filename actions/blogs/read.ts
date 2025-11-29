@@ -1,62 +1,101 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
+import { Blog } from "@/lib/generated/prisma/client";
 
+/**
+ * Fetches all blogs with their author information
+ *
+ * @returns Object with either the blogs array or an error message
+ */
 export async function getBlogs() {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("blogs")
-      .select("*, authors(id, name, email, avatar_url)")
-      .order("created_at", { ascending: false });
-    if (error) return { error: error.message, blogs: [] };
-    return { blogs: data, error: null };
+    const blogs = await prisma.blog.findMany({
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { blogs, error: null };
   } catch (error) {
+    console.error("Get blogs error:", error);
     return { error: "Failed to fetch blogs", blogs: [] };
   }
 }
 
-export async function getBlogById(id: number) {
+/**
+ * Fetches a single blog by ID with its author information
+ *
+ * @param id - Blog ID (UUID string)
+ * @returns Object with either the blog or an error message
+ */
+export async function getBlogById(id: string) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("blogs")
-      .select("*, authors(id, name, email, avatar_url)")
-      .eq("id", id)
-      .single();
-    if (error || !data)
-      return { error: error?.message || "Not found", blog: null };
-    return { blog: data, error: null };
+    const blog = await prisma.blog.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!blog) {
+      return { error: "Not found", blog: null };
+    }
+
+    return { blog, error: null };
   } catch (error) {
+    console.error("Get blog by ID error:", error);
     return { error: "Failed to fetch blog", blog: null };
   }
 }
 
+/**
+ * Fetches blog metadata (without full content) for listing pages
+ *
+ * @returns Object with either the blogs array or an error message
+ */
 export async function getBlogMetadatas() {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("blogs")
-      .select(
-        "id, created_at, updated_at, title, description, featured_image_url, author_id, is_published, seo_title, seo_description, keywords, authors(id, name, email, avatar_url)"
-      )
-      .order("created_at", { ascending: false });
-    if (error) return { error: error.message, blogs: [] };
-    return { blogs: data, error: null };
+    const blogs = await prisma.blog.findMany({
+      include: {
+        author: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return blogs;
   } catch (error) {
-    return { error: "Failed to fetch blog metadata", blogs: [] };
+    console.error("Get blog metadatas error:", error);
+    return [];
   }
 }
 
+/**
+ * Gets the total count of blogs
+ *
+ * @returns Total number of blogs
+ */
 export async function getBlogCount() {
   try {
-    const supabase = await createClient();
-    const { count, error } = await supabase
-      .from("blogs")
-      .select("id", { count: "exact", head: true });
-    if (error) return 0;
-    return count || 0;
-  } catch {
+    const count = await prisma.blog.count();
+    return count;
+  } catch (error) {
+    console.error("Get blog count error:", error);
     return 0;
   }
 }
