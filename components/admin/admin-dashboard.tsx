@@ -49,7 +49,7 @@ export default function AdminDashboard({ admin, counts }: AdminDashboardProps) {
       }
 
       if (result?.success) {
-        router.push("/admin/login");
+        router.push("/login");
         setIsLoggingOut(false);
         return;
       }
