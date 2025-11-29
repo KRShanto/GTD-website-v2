@@ -5,9 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
-  engineType = "client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -27,7 +25,6 @@ model User {
   @@map("users")
 }
 
-
 // Team members model
 // Represents team members with their profile information
 model Team {
@@ -45,11 +42,11 @@ model Team {
 // Authors model
 // Represents blog post authors
 model Author {
-  id        String    @id @default(uuid())
-  name      String    @db.Text
-  email     String?   @db.Text
-  avatarUrl String    @map("avatar_url") @db.Text
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String   @id @default(uuid())
+  name      String   @db.Text
+  email     String?  @db.Text
+  avatarUrl String   @map("avatar_url") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relationship: One author can have many blog posts
   blogs Blog[]
@@ -72,7 +69,7 @@ model Blog {
   isPublished      Boolean   @default(false) @map("is_published")
   seoTitle         String?   @map("seo_title") @db.Text
   seoDescription   String?   @map("seo_description") @db.Text
-  keywords         Json?     // Array of keywords stored as JSON
+  keywords         Json? // Array of keywords stored as JSON
 
   // Relationship: Many blogs belong to one author
   author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -111,11 +108,11 @@ model GalleryImage {
 // Gallery videos model
 // Represents videos in the gallery with optional thumbnails
 model GalleryVideo {
-  id           String    @id @default(uuid())
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  videoUrl     String    @map("video_url") @db.Text
-  alt          String    @db.Text
-  thumbnailUrl String?   @map("thumbnail_url") @db.Text
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  videoUrl     String   @map("video_url") @db.Text
+  alt          String   @db.Text
+  thumbnailUrl String?  @map("thumbnail_url") @db.Text
 
   @@map("gallery-videos")
 }
