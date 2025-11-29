@@ -1,6 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import TeamMemberEdit from "@/components/admin/team-member-edit";
-import { getUser } from "@/lib/auth";
 import { getTeamMember } from "@/actions/team/read";
 
 interface EditTeamMemberPageProps {
@@ -10,12 +9,6 @@ interface EditTeamMemberPageProps {
 export default async function EditTeamMemberPage({
   params,
 }: EditTeamMemberPageProps) {
-  // Check auth
-  const admin = await getUser();
-  if (!admin) {
-    redirect("/admin/login");
-  }
-
   // Get params - ID is now a UUID string, not a number
   const { id } = await params;
   const memberId = id;
