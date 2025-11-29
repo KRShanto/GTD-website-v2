@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import {
@@ -83,6 +84,7 @@ export async function updateGalleryVideo(id: string, formData: FormData) {
     });
 
     revalidatePath("/admin/gallery/videos");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
     return { video: galleryVideo };
   } catch (error) {
     console.error("Update gallery video error:", error);
@@ -105,6 +107,7 @@ export async function updateMultipleGalleryVideos(
     );
 
     revalidatePath("/admin/gallery/videos");
+    revalidateTag(CACHE_TAGS.GALLERY_VIDEOS);
     return { videos: galleryVideos };
   } catch (error) {
     console.error("Update multiple gallery videos error:", error);
