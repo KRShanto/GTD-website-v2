@@ -21,10 +21,6 @@ export function createSevallaClient(): S3Client {
     );
   }
 
-  console.log("Sevalla URL:", sevallaUrl);
-  console.log("Sevalla Access Key:", accessKey);
-  console.log("Sevalla Secret Key:", secretKey);
-
   // Create S3 client with Sevalla endpoint
   // Sevalla uses S3-compatible API, so we configure the endpoint
   const client = new S3Client({
