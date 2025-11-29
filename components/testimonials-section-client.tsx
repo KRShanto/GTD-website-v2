@@ -4,33 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Quote, Star } from "lucide-react";
 import AnimatedSection from "@/components/animated-section";
-import { Testimonial as BaseTestimonial } from "@/lib/types";
-
-interface Testimonial extends BaseTestimonial {
-  delay: number;
-}
+import { Testimonial } from "@/lib/generated/prisma/client";
 
 interface TestimonialsSectionClientProps {
   testimonials: Testimonial[];
-  error?: string | null;
 }
 
 export default function TestimonialsSectionClient({
   testimonials,
-  error,
 }: TestimonialsSectionClientProps) {
-  if (error) {
-    return (
-      <section className="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-gray-900 to-black">
-        <div className="container mx-auto px-6 xs:px-8 sm:px-12 md:px-16 lg:px-24 xl:px-32">
-          <div className="text-center">
-            <p className="text-red-400">Error loading testimonials: {error}</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-gray-900 to-black">
       <div className="container mx-auto px-6 xs:px-8 sm:px-12 md:px-16 lg:px-24 xl:px-32">
@@ -49,7 +31,7 @@ export default function TestimonialsSectionClient({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-6 md:gap-8">
           {testimonials.map((testimonial, index) => (
-            <AnimatedSection key={index} delay={testimonial.delay}>
+            <AnimatedSection key={index} delay={index * 100}>
               <Card className="bg-gradient-to-br from-gray-900 to-black border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 h-full">
                 <CardContent className="p-4 xs:p-6 md:p-8 flex flex-col h-full">
                   <Quote className="h-6 w-6 xs:h-7 xs:w-7 sm:h-8 sm:w-8 text-orange-400 mb-3 xs:mb-4" />

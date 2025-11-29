@@ -5,34 +5,25 @@ import { Testimonial } from "@/lib/generated/prisma/client";
 
 /**
  * Fetches all testimonials from the database
- * 
+ *
  * @returns Object with either the testimonials array or an error message
  */
-export async function getTestimonials(): Promise<{
-  testimonials: Testimonial[];
-  error: string | null;
-}> {
+export async function getTestimonials(): Promise<Testimonial[]> {
   try {
     const testimonials = await prisma.testimonial.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    return {
-      testimonials,
-      error: null,
-    };
+    return testimonials;
   } catch (error) {
     console.error("Error fetching testimonials:", error);
-    return {
-      testimonials: [],
-      error: "Failed to fetch testimonials",
-    };
+    return [];
   }
 }
 
 /**
  * Fetches a single testimonial by ID
- * 
+ *
  * @param id - The UUID string of the testimonial to retrieve
  * @returns Object with either the testimonial data or an error message
  */
