@@ -51,10 +51,10 @@ export async function getTeamMembers() {
       orderedMembers = [...orderedMembers, ...missing];
     }
 
-    return { success: true, data: orderedMembers };
+    return orderedMembers;
   } catch (error) {
     console.error("Error fetching team members:", error);
-    return { error: "Failed to fetch team members" };
+    return [];
   }
 }
 

@@ -5,39 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
 import AnimatedSection from "@/components/animated-section";
-
-interface TeamMember {
-  name: string;
-  title: string;
-  bio: string;
-  image: string;
-  slug: string;
-}
+import { Team } from "@/lib/generated/prisma/client";
 
 interface TeamSectionClientProps {
-  teamMembers: TeamMember[];
-  error?: string | null;
+  teamMembers: Team[];
 }
 
 export default function TeamSectionClient({
   teamMembers,
-  error,
 }: TeamSectionClientProps) {
-  if (error) {
-    return (
-      <section
-        id="team"
-        className="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-black to-gray-900"
-      >
-        <div className="container mx-auto px-6 xs:px-8 sm:px-12 md:px-16 lg:px-24 xl:px-32">
-          <div className="text-center">
-            <p className="text-red-400">Error loading team members: {error}</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section
       id="team"
@@ -74,7 +50,7 @@ export default function TeamSectionClient({
                       <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full opacity-20 group-hover:opacity-30 transition-opacity"></div>
                       <div className="relative w-full h-full overflow-hidden rounded-full border-2 border-orange-500/30 group-hover:border-orange-500/60 transition-colors">
                         <Image
-                          src={member.image}
+                          src={member.imageUrl || ""}
                           alt={member.name}
                           fill
                           className="object-cover"

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Play, ArrowRight } from "lucide-react";
 import AnimatedBackground from "@/components/animated-background";
 import HeroNavbar from "@/components/hero-navbar";
@@ -25,6 +24,7 @@ export default function HeroSection() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
+          {/* TODO: upload to sevalla */}
           <source
             src="https://firebasestorage.googleapis.com/v0/b/gtd-website-25.firebasestorage.app/o/hero.mp4?alt=media&token=27bc3a0e-6b4e-468e-b994-baa8e2f7329e"
             type="video/mp4"
