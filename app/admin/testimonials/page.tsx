@@ -5,11 +5,9 @@ import { getUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 async function TestimonialsContent() {
-  const { testimonials, error } = await getTestimonials();
+  const testimonials = await getTestimonials();
 
-  return (
-    <TestimonialManagement initialTestimonials={testimonials} error={error} />
-  );
+  return <TestimonialManagement initialTestimonials={testimonials} />;
 }
 
 export default async function TestimonialsPage() {
