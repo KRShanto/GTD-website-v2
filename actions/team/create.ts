@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/db";
 import { uploadTeamImageServer } from "@/lib/sevalla/storage-server";
 import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 
 /**
  * Generates a URL-friendly slug from a name
@@ -93,6 +94,7 @@ export async function createTeamMember(formData: FormData) {
     // Revalidate Next.js cache paths
     revalidatePath("/admin/team");
     revalidatePath("/team");
+    revalidateTag(CACHE_TAGS.TEAM);
 
     return { member: teamMember };
   } catch (error) {
