@@ -1,11 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
-import {
-  uploadGalleryImageServer,
-} from "@/lib/sevalla/storage-server";
+import { uploadGalleryImageServer } from "@/lib/sevalla/storage-server";
 
 /**
  * Creates a single gallery image:
@@ -50,9 +49,9 @@ export async function createGalleryImage(formData: FormData) {
     // Maintain Redis order (newest at the beginning)
     await redis.lpush("gallery:images:order", created.id);
 
-    // Revalidate relevant paths
+    // Revalidate relevant paths and cache tags
     revalidatePath("/admin/gallery/images");
-    revalidatePath("/");
+    revalidateTag(CACHE_TAGS.GALLERY_IMAGES);
 
     return { success: true, data: created };
   } catch (error) {
