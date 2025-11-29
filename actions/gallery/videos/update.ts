@@ -1,56 +1,48 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import {
-  uploadVideoToFirebase,
-  uploadImageToFirebase,
-  deleteVideoFromFirebase,
-  deleteImageFromFirebase,
-  FIREBASE_FOLDERS,
-} from "@/lib/firebase/storage";
 import { revalidatePath } from "next/cache";
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/db";
+import {
+  uploadGalleryVideoServer,
+  uploadGalleryThumbnailServer,
+  deleteVideoFromSevallaServer,
+  deleteImageFromSevallaServer,
+} from "@/lib/sevalla/storage-server";
 
-export async function updateGalleryVideo(id: number, formData: FormData) {
+export async function updateGalleryVideo(id: string, formData: FormData) {
   try {
     const alt = formData.get("alt") as string;
     const video = formData.get("video") as File | null;
     const thumbnail = formData.get("thumbnail") as File | null;
 
-    // Create Supabase client
-    const supabase = await createClient();
+    // Get current video data from Prisma
+    const currentVideo = await prisma.galleryVideo.findUnique({
+      where: { id },
+      select: {
+        videoUrl: true,
+        thumbnailUrl: true,
+      },
+    });
 
-    // Get current video data
-    const { data: currentVideo, error: fetchError } = await supabase
-      .from("gallery-videos")
-      .select("video_url, thumbnail_url")
-      .eq("id", id)
-      .single();
-
-    if (fetchError) {
-      return { error: fetchError.message };
+    if (!currentVideo) {
+      return { error: "Gallery video not found" };
     }
 
     // Prepare update data
     const updateData: {
       alt: string;
-      video_url?: string;
-      thumbnail_url?: string;
+      videoUrl?: string;
+      thumbnailUrl?: string | null;
     } = {
       alt: alt || "",
     };
 
-    // Handle video update if new file is provided
+    // Handle video update if new file is provided (upload to Sevalla)
     if (video) {
-      const videoUploadResult = await uploadVideoToFirebase(
+      const videoUploadResult = await uploadGalleryVideoServer(
         video,
-        video.name,
-        `${FIREBASE_FOLDERS.GALLERY_VIDEOS}`,
-        {
-          onError: (error) => {
-            console.error("Video upload error:", error);
-          },
-        }
+        video.name
       );
 
       if (!videoUploadResult.success || !videoUploadResult.url) {
@@ -58,24 +50,18 @@ export async function updateGalleryVideo(id: number, formData: FormData) {
       }
 
       // Delete old video if exists
-      if (currentVideo?.video_url) {
-        await deleteVideoFromFirebase(currentVideo.video_url);
+      if (currentVideo?.videoUrl) {
+        await deleteVideoFromSevallaServer(currentVideo.videoUrl);
       }
 
-      updateData.video_url = videoUploadResult.url;
+      updateData.videoUrl = videoUploadResult.url;
     }
 
-    // Handle thumbnail update if new file is provided
+    // Handle thumbnail update if new file is provided (upload to Sevalla)
     if (thumbnail) {
-      const thumbnailUploadResult = await uploadImageToFirebase(
+      const thumbnailUploadResult = await uploadGalleryThumbnailServer(
         thumbnail,
-        thumbnail.name,
-        `${FIREBASE_FOLDERS.GALLERY_THUMBNAILS}`,
-        {
-          onError: (error) => {
-            console.error("Thumbnail upload error:", error);
-          },
-        }
+        thumbnail.name
       );
 
       if (!thumbnailUploadResult.success || !thumbnailUploadResult.url) {
@@ -83,24 +69,18 @@ export async function updateGalleryVideo(id: number, formData: FormData) {
       }
 
       // Delete old thumbnail if exists
-      if (currentVideo?.thumbnail_url) {
-        await deleteImageFromFirebase(currentVideo.thumbnail_url);
+      if (currentVideo?.thumbnailUrl) {
+        await deleteImageFromSevallaServer(currentVideo.thumbnailUrl);
       }
 
-      updateData.thumbnail_url = thumbnailUploadResult.url;
+      updateData.thumbnailUrl = thumbnailUploadResult.url;
     }
 
-    // Update in database
-    const { data: galleryVideo, error: updateError } = await supabase
-      .from("gallery-videos")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) {
-      return { error: updateError.message };
-    }
+    // Update in database via Prisma
+    const galleryVideo = await prisma.galleryVideo.update({
+      where: { id },
+      data: updateData,
+    });
 
     revalidatePath("/admin/gallery/videos");
     return { video: galleryVideo };
@@ -111,26 +91,18 @@ export async function updateGalleryVideo(id: number, formData: FormData) {
 }
 
 export async function updateMultipleGalleryVideos(
-  updates: { id: number; alt: string; pos: number }[]
+  updates: { id: string; alt: string; pos: number }[]
 ) {
   try {
-    const supabase = await createClient();
-
-    // Update all videos in database
-    const { data: galleryVideos, error } = await supabase
-      .from("gallery-videos")
-      .upsert(
-        updates.map((update) => ({
-          id: update.id,
-          alt: update.alt,
-          pos: update.pos,
-        }))
+    // Bulk update alt text using Prisma (we ignore "pos" field; order is handled via Redis)
+    const galleryVideos = await Promise.all(
+      updates.map((update) =>
+        prisma.galleryVideo.update({
+          where: { id: update.id },
+          data: { alt: update.alt },
+        })
       )
-      .select();
-
-    if (error) {
-      return { error: error.message };
-    }
+    );
 
     revalidatePath("/admin/gallery/videos");
     return { videos: galleryVideos };
@@ -140,7 +112,7 @@ export async function updateMultipleGalleryVideos(
   }
 }
 
-export async function reorderGalleryVideos(ids: number[]) {
+export async function reorderGalleryVideos(ids: string[]) {
   await redis.del("gallery:videos:order");
   if (ids.length > 0) {
     await redis.rpush("gallery:videos:order", ...ids);
