@@ -8,8 +8,7 @@ import { getTeamMembers } from "@/actions/team/read";
 
 export default async function TeamPage() {
   // Fetch team members using the read action
-  const result = await getTeamMembers();
-  const members = result.success && result.data ? result.data : [];
+  const members = await getTeamMembers();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
