@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import {
@@ -71,6 +72,7 @@ export async function updateGalleryImage(id: string, formData: FormData) {
     });
 
     revalidatePath("/admin/gallery/images");
+    revalidateTag(CACHE_TAGS.GALLERY_IMAGES);
     return { image: galleryImage };
   } catch (error) {
     console.error("Update gallery image error:", error);
