@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import { deleteImageFromSevallaServer } from "@/lib/sevalla/storage-server";
@@ -37,6 +38,7 @@ export async function deleteGalleryImage(id: string) {
     }
 
     revalidatePath("/admin/gallery/images");
+    revalidateTag(CACHE_TAGS.GALLERY_IMAGES);
     return { success: true };
   } catch (error) {
     console.error("Delete gallery image error:", error);
@@ -77,6 +79,7 @@ export async function deleteMultipleGalleryImages(ids: string[]) {
     await Promise.all(deletePromises);
 
     revalidatePath("/admin/gallery/images");
+    revalidateTag(CACHE_TAGS.GALLERY_IMAGES);
     return { success: true };
   } catch (error) {
     console.error("Delete multiple gallery images error:", error);
