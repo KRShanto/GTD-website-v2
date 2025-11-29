@@ -7,14 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createMultipleGalleryVideos } from "@/actions/gallery/videos/create";
 import { useToast } from "@/components/ui/use-toast";
-import { Progress } from "@/components/ui/progress";
 import { X, Upload, Video, Image as ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  uploadVideoToFirebase,
-  uploadImageToFirebase,
-  FIREBASE_FOLDERS,
-} from "@/lib/firebase/storage";
 import { useRouter } from "next/navigation";
 
 interface VideoWithPreview extends File {
@@ -29,9 +23,6 @@ export default function MultipleVideoUpload() {
   const router = useRouter();
   const [videos, setVideos] = useState<VideoWithPreview[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{
-    [key: string]: { video: number; thumbnail: number };
-  }>({});
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setVideos((prevVideos) => [
@@ -102,89 +93,104 @@ export default function MultipleVideoUpload() {
     }
 
     setLoading(true);
-    setUploadProgress(
-      videos.reduce(
-        (acc, _, index) => ({
-          ...acc,
-          [index]: { video: 0, thumbnail: 0 },
-        }),
-        {}
-      )
-    );
 
     try {
-      // Upload all videos and thumbnails to Firebase
-      const uploadedVideos = await Promise.all(
-        videos.map(async (video, index) => {
-          // Upload video
-          const videoUploadResult = await uploadVideoToFirebase(
-            video,
-            video.name,
-            `${FIREBASE_FOLDERS.GALLERY_VIDEOS}`,
+      // Upload all videos + thumbnails via presigned URLs, then persist URLs via server action
+      const payload: {
+        videoUrl: string;
+        alt: string;
+        thumbnailUrl?: string;
+      }[] = [];
+
+      for (let index = 0; index < videos.length; index++) {
+        const video = videos[index];
+
+        // Presign video
+        const presignVideoRes = await fetch(
+          "/api/sevalla/gallery-video-presign",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: video.name,
+              contentType: video.type || "application/octet-stream",
+              type: "video" as const,
+            }),
+          }
+        );
+
+        if (!presignVideoRes.ok) {
+          const data = await presignVideoRes.json().catch(() => null);
+          throw new Error(
+            data?.error ||
+              `Failed to prepare upload for video ${video.name}`
+          );
+        }
+
+        const {
+          uploadUrl: videoUploadUrl,
+          publicUrl: videoPublicUrl,
+        } = await presignVideoRes.json();
+
+        // Upload video
+        const uploadVideoRes = await fetch(videoUploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": video.type || "application/octet-stream",
+          },
+          body: video,
+        });
+
+        if (!uploadVideoRes.ok) {
+          throw new Error(`Failed to upload video: ${video.name}`);
+        }
+
+        // Presign + upload thumbnail if present
+        let thumbnailUrl: string | undefined;
+        if (video.thumbnailFile) {
+          const presignThumbRes = await fetch(
+            "/api/sevalla/gallery-video-presign",
             {
-              onProgress: (progress) => {
-                setUploadProgress((prev) => ({
-                  ...prev,
-                  [index]: {
-                    ...prev[index],
-                    video: progress,
-                  },
-                }));
-              },
-              onError: (error) => {
-                toast({
-                  title: `Error uploading video ${video.name}`,
-                  description: error,
-                  variant: "destructive",
-                });
-              },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fileName: video.thumbnailFile.name,
+                contentType:
+                  video.thumbnailFile.type || "application/octet-stream",
+                type: "thumbnail" as const,
+              }),
             }
           );
 
-          if (!videoUploadResult.success || !videoUploadResult.url) {
-            throw new Error(`Failed to upload video: ${video.name}`);
-          }
+          if (presignThumbRes.ok) {
+            const {
+              uploadUrl: thumbUploadUrl,
+              publicUrl: thumbPublicUrl,
+            } = await presignThumbRes.json();
 
-          // Upload thumbnail if present
-          let thumbnailUrl = "";
-          if (video.thumbnailFile) {
-            const thumbnailUploadResult = await uploadImageToFirebase(
-              video.thumbnailFile,
-              video.thumbnailFile.name,
-              `${FIREBASE_FOLDERS.GALLERY_THUMBNAILS}`,
-              {
-                onProgress: (progress) => {
-                  setUploadProgress((prev) => ({
-                    ...prev,
-                    [index]: {
-                      ...prev[index],
-                      thumbnail: progress,
-                    },
-                  }));
-                },
-                onError: (error) => {
-                  toast({
-                    title: `Error uploading thumbnail for ${video.name}`,
-                    description: error,
-                    variant: "destructive",
-                  });
-                },
-              }
-            );
-            if (thumbnailUploadResult.success && thumbnailUploadResult.url) {
-              thumbnailUrl = thumbnailUploadResult.url;
+            const uploadThumbRes = await fetch(thumbUploadUrl, {
+              method: "PUT",
+              headers: {
+                "Content-Type":
+                  video.thumbnailFile.type || "application/octet-stream",
+              },
+              body: video.thumbnailFile,
+            });
+
+            if (uploadThumbRes.ok) {
+              thumbnailUrl = thumbPublicUrl;
             }
           }
+        }
 
-          return {
-            videoUrl: videoUploadResult.url,
-            alt: video.alt,
-            thumbnailUrl: thumbnailUrl || undefined,
-          };
-        })
-      );
+        payload.push({
+          videoUrl: videoPublicUrl,
+          alt: video.alt,
+          thumbnailUrl,
+        });
+      }
 
-      const result = await createMultipleGalleryVideos(uploadedVideos);
+      const result = await createMultipleGalleryVideos(payload);
 
       if (result.error) {
         toast({
@@ -221,7 +227,6 @@ export default function MultipleVideoUpload() {
       });
     } finally {
       setLoading(false);
-      setUploadProgress({});
     }
   };
 
@@ -256,7 +261,7 @@ export default function MultipleVideoUpload() {
         <div className="space-y-6">
           {videos.map((video, index) => (
             <Card
-              key={video.name}
+              key={index}
               className="bg-gradient-to-br from-gray-900 to-black border-orange-500/20"
             >
               <CardContent className="p-6 space-y-6">
@@ -298,22 +303,6 @@ export default function MultipleVideoUpload() {
                           Size: {(video.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
                       </div>
-                      {uploadProgress[index]?.video > 0 && (
-                        <div className="mt-4 space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-300">
-                              Uploading video...
-                            </span>
-                            <span className="text-orange-400">
-                              {uploadProgress[index].video}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={uploadProgress[index].video}
-                            className="h-2 bg-gray-700"
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -411,22 +400,6 @@ export default function MultipleVideoUpload() {
                               </Button>
                             )}
                           </div>
-                          {uploadProgress[index]?.thumbnail > 0 && (
-                            <div className="mt-4 space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-300">
-                                  Uploading thumbnail...
-                                </span>
-                                <span className="text-orange-400">
-                                  {uploadProgress[index].thumbnail}%
-                                </span>
-                              </div>
-                              <Progress
-                                value={uploadProgress[index].thumbnail}
-                                className="h-2 bg-gray-700"
-                              />
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>

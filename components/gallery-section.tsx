@@ -1,7 +1,10 @@
 import { getGalleryVideos } from "@/actions/gallery/videos/get";
 import { getGalleryImages } from "@/actions/gallery/images/get";
 import GallerySectionClient from "./gallery-section-client";
-import { GalleryImage, GalleryVideo } from "@/lib/types";
+import {
+  GalleryImage,
+  GalleryVideo,
+} from "@/lib/generated/prisma/client";
 
 export default async function GallerySection() {
   const [videosResult, imagesResult] = await Promise.all([

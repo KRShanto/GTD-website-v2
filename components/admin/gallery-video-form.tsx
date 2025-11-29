@@ -18,7 +18,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { createGalleryVideo } from "@/actions/gallery/videos/create";
 import { updateGalleryVideo } from "@/actions/gallery/videos/update";
-import { GalleryVideo } from "@/lib/types";
+import { GalleryVideo } from "@/lib/generated/prisma/client";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/animated-section";
 import Link from "next/link";
@@ -26,21 +26,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import MultipleVideoUpload from "@/components/admin/multiple-video-upload";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  uploadVideoToFirebase,
-  uploadImageToFirebase,
-} from "@/lib/firebase/storage";
-import { FIREBASE_FOLDERS } from "@/lib/firebase/storage";
-
 interface GalleryVideoFormProps {
   video?: GalleryVideo;
   isEditing?: boolean;
-  id?: number;
-  initialData?: {
-    video_url: string;
-    thumbnail_url: string;
-    alt: string;
-  };
+  id?: string;
   onSuccess?: () => void;
 }
 
@@ -48,7 +37,6 @@ export default function GalleryVideoForm({
   video,
   isEditing = false,
   id,
-  initialData,
   onSuccess,
 }: GalleryVideoFormProps) {
   const router = useRouter();
@@ -56,13 +44,13 @@ export default function GalleryVideoForm({
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    alt: initialData?.alt || video?.alt || "",
+    alt: video?.alt || "",
   });
   const [videoPreview, setVideoPreview] = useState<string | null>(
-    initialData?.video_url || video?.video_url || null
+    video?.videoUrl || null
   );
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
-    initialData?.thumbnail_url || video?.thumbnail_url || null
+    video?.thumbnailUrl || null
   );
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null);
@@ -98,7 +86,7 @@ export default function GalleryVideoForm({
 
   const handleVideoRemove = () => {
     setSelectedVideo(null);
-    setVideoPreview(video?.video_url || null);
+    setVideoPreview(video?.videoUrl || null);
     setUploadProgress({ video: 0, thumbnail: 0, stage: "idle" });
     if (videoInputRef.current) {
       videoInputRef.current.value = "";
@@ -107,7 +95,7 @@ export default function GalleryVideoForm({
 
   const handleThumbnailRemove = () => {
     setSelectedThumbnail(null);
-    setThumbnailPreview(video?.thumbnail_url || null);
+    setThumbnailPreview(video?.thumbnailUrl || null);
     if (thumbnailInputRef.current) {
       thumbnailInputRef.current.value = "";
     }
@@ -128,30 +116,18 @@ export default function GalleryVideoForm({
         return;
       }
 
-      // Create FormData
-      const formDataToSubmit = new FormData();
-      formDataToSubmit.append("alt", formData.alt);
-
-      // Add video file if selected
-      if (selectedVideo) {
-        formDataToSubmit.append("video", selectedVideo);
-      }
-
-      // Add thumbnail file if selected
-      if (selectedThumbnail) {
-        formDataToSubmit.append("thumbnail", selectedThumbnail);
-      }
-
-      // For update, send FormData directly
+      // For update, send FormData directly (Prisma + Sevalla on server)
       if (id) {
-        console.log("Updating video with ID:", id);
-        console.log(
-          "Form data:",
-          Object.fromEntries(formDataToSubmit.entries())
-        );
+        const formDataToSubmit = new FormData();
+        formDataToSubmit.append("alt", formData.alt);
+        if (selectedVideo) {
+          formDataToSubmit.append("video", selectedVideo);
+        }
+        if (selectedThumbnail) {
+          formDataToSubmit.append("thumbnail", selectedThumbnail);
+        }
 
         const result = await updateGalleryVideo(id, formDataToSubmit);
-        console.log("Update result:", result);
 
         if (result.error) {
           useToastToast({
@@ -162,80 +138,120 @@ export default function GalleryVideoForm({
           return;
         }
       } else {
-        // For create, upload files first then send URLs
-        let videoUrl = "";
-        if (selectedVideo) {
-          setUploadProgress((prev) => ({ ...prev, stage: "uploading-video" }));
-          const videoUploadResult = await uploadVideoToFirebase(
-            selectedVideo,
-            selectedVideo.name,
-            `${FIREBASE_FOLDERS.GALLERY_VIDEOS}`,
-            {
-              onProgress: (progress) => {
-                setUploadProgress((prev) => ({ ...prev, video: progress }));
-              },
-              onError: (error) => {
-                console.error("Video upload error:", error);
-                useToastToast({
-                  title: "Error",
-                  description: "Failed to upload video. Please try again.",
-                  variant: "destructive",
-                });
-              },
-            }
-          );
+        // For create: use presigned URLs to upload to Sevalla from client,
+        // then persist URLs via server action.
 
-          if (!videoUploadResult.success || !videoUploadResult.url) {
-            useToastToast({
-              title: "Error",
-              description: "Failed to upload video. Please try again.",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          videoUrl = videoUploadResult.url;
+        if (!selectedVideo) {
+          useToastToast({
+            title: "Error",
+            description: "Please select a video to upload",
+            variant: "destructive",
+          });
+          return;
         }
 
-        // Upload thumbnail if selected
-        let thumbnailUrl = "";
+        // 1) Get presigned URL for video
+        const presignVideoRes = await fetch(
+          "/api/sevalla/gallery-video-presign",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              fileName: selectedVideo.name,
+              contentType: selectedVideo.type || "application/octet-stream",
+              type: "video" as const,
+            }),
+          }
+        );
+
+        if (!presignVideoRes.ok) {
+          const data = await presignVideoRes.json().catch(() => null);
+          useToastToast({
+            title: "Error",
+            description:
+              data?.error ||
+              "Failed to prepare video upload. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { uploadUrl: videoUploadUrl, publicUrl: videoPublicUrl } =
+          await presignVideoRes.json();
+
+        // 2) Upload video directly to Sevalla
+        setUploadProgress((prev) => ({ ...prev, stage: "uploading-video" }));
+        const uploadVideoRes = await fetch(videoUploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": selectedVideo.type || "application/octet-stream",
+          },
+          body: selectedVideo,
+        });
+
+        if (!uploadVideoRes.ok) {
+          useToastToast({
+            title: "Error",
+            description: "Failed to upload video. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 3) Optionally upload thumbnail
+        let thumbnailUrl: string | undefined;
         if (selectedThumbnail) {
-          setUploadProgress((prev) => ({
-            ...prev,
-            stage: "uploading-thumbnail",
-          }));
-          const thumbnailUploadResult = await uploadImageToFirebase(
-            selectedThumbnail,
-            selectedThumbnail.name,
-            `${FIREBASE_FOLDERS.GALLERY_THUMBNAILS}`,
+          const presignThumbRes = await fetch(
+            "/api/sevalla/gallery-video-presign",
             {
-              onProgress: (progress) => {
-                setUploadProgress((prev) => ({ ...prev, thumbnail: progress }));
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
               },
-              onError: (error) => {
-                console.error("Thumbnail upload error:", error);
-              },
+              body: JSON.stringify({
+                fileName: selectedThumbnail.name,
+                contentType:
+                  selectedThumbnail.type || "application/octet-stream",
+                type: "thumbnail" as const,
+              }),
             }
           );
 
-          if (!thumbnailUploadResult.success || !thumbnailUploadResult.url) {
-            useToastToast({
-              title: "Error",
-              description:
-                "Failed to upload thumbnail. Video will be saved without a thumbnail.",
-              variant: "destructive",
+          if (presignThumbRes.ok) {
+            const { uploadUrl: thumbUploadUrl, publicUrl: thumbPublicUrl } =
+              await presignThumbRes.json();
+
+            setUploadProgress((prev) => ({
+              ...prev,
+              stage: "uploading-thumbnail",
+            }));
+
+            const uploadThumbRes = await fetch(thumbUploadUrl, {
+              method: "PUT",
+              headers: {
+                "Content-Type":
+                  selectedThumbnail.type || "application/octet-stream",
+              },
+              body: selectedThumbnail,
             });
+
+            if (uploadThumbRes.ok) {
+              thumbnailUrl = thumbPublicUrl;
+            } else {
+              console.error("Thumbnail upload failed");
+            }
           } else {
-            thumbnailUrl = thumbnailUploadResult.url;
+            console.error("Failed to prepare thumbnail upload");
           }
         }
 
         setUploadProgress((prev) => ({ ...prev, stage: "saving" }));
 
-        // Create new video
         const result = await createGalleryVideo({
-          videoUrl: videoUrl,
-          thumbnailUrl: thumbnailUrl,
+          videoUrl: videoPublicUrl,
+          thumbnailUrl,
           alt: formData.alt,
         });
 
@@ -556,7 +572,7 @@ export default function GalleryVideoForm({
                                   unoptimized={selectedThumbnail ? true : false}
                                 />
                                 {(selectedThumbnail ||
-                                  (isEditing && video?.thumbnail_url)) && (
+                                  (isEditing && video?.thumbnailUrl)) && (
                                   <Button
                                     type="button"
                                     onClick={handleThumbnailRemove}

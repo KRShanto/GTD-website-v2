@@ -19,7 +19,7 @@ import {
   Play,
   GripVertical,
 } from "lucide-react";
-import { GalleryVideo } from "@/lib/types";
+import { GalleryVideo } from "@/lib/generated/prisma/client";
 import {
   deleteGalleryVideo,
   deleteMultipleGalleryVideos,
@@ -64,15 +64,14 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface GalleryVideoManagementProps {
   initialVideos: GalleryVideo[];
-  error: string | null;
 }
 
 interface DraggableVideoCardProps {
   video: GalleryVideo;
   selected: boolean;
-  onSelect: (videoId: number, checked: boolean) => void;
-  deletingId: number | null;
-  onDelete: (id: number, alt: string) => Promise<void>;
+  onSelect: (videoId: string, checked: boolean) => void;
+  deletingId: string | null;
+  onDelete: (id: string, alt: string) => Promise<void>;
   showAltText: boolean;
   onEdit?: () => void;
 }
@@ -127,9 +126,9 @@ function DraggableVideoCard({
               <Dialog>
                 <DialogTrigger asChild>
                   <div className="relative w-full cursor-pointer group">
-                    {video.thumbnail_url ? (
+                    {video.thumbnailUrl ? (
                       <Image
-                        src={video.thumbnail_url}
+                        src={video.thumbnailUrl}
                         alt={video.alt}
                         width={300}
                         height={200}
@@ -138,7 +137,7 @@ function DraggableVideoCard({
                       />
                     ) : (
                       <video
-                        src={video.video_url}
+                        src={video.videoUrl}
                         className="w-full aspect-video object-cover transition-transform group-hover:scale-105"
                         muted
                         preload="metadata"
@@ -162,7 +161,7 @@ function DraggableVideoCard({
                   <div className="space-y-4">
                     <div className="relative aspect-video overflow-hidden rounded-lg">
                       <video
-                        src={video.video_url}
+                        src={video.videoUrl}
                         controls
                         className="w-full h-full object-contain"
                       >
@@ -245,16 +244,15 @@ function DraggableVideoCard({
 
 export default function GalleryVideoManagement({
   initialVideos,
-  error,
 }: GalleryVideoManagementProps) {
   const [videos, setVideos] = useState<GalleryVideo[]>(initialVideos);
-  const [selectedVideos, setSelectedVideos] = useState<Set<number>>(new Set());
+  const [selectedVideos, setSelectedVideos] = useState<Set<string>>(new Set());
   const [showAltText, setShowAltText] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingMultiple, setDeletingMultiple] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const handleSelect = (videoId: number, checked: boolean) => {
+  const handleSelect = (videoId: string, checked: boolean) => {
     const newSelection = new Set(selectedVideos);
     if (checked) {
       newSelection.add(videoId);
@@ -272,7 +270,7 @@ export default function GalleryVideoManagement({
     }
   };
 
-  const handleDelete = async (id: number, alt: string) => {
+  const handleDelete = async (id: string, alt: string) => {
     setDeletingId(id);
     try {
       const result = await deleteGalleryVideo(id);
@@ -328,29 +326,6 @@ export default function GalleryVideoManagement({
     await reorderGalleryVideos(newVideos.map((v) => v.id));
     toast.success("Video order updated");
   };
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-        <div className="container mx-auto px-6 py-16">
-          <Card className="bg-gradient-to-br from-gray-900 to-black border-red-500/20 max-w-2xl mx-auto">
-            <CardContent className="p-8 text-center">
-              <div className="text-red-400 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Error Loading Gallery Videos
-              </h2>
-              <p className="text-gray-400 mb-6">{error}</p>
-              <Link href="/admin">
-                <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
