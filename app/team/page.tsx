@@ -2,11 +2,40 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import AnimatedSection from "@/components/animated-section";
 import StickyNavigation from "@/components/sticky-navigation";
-import { getTeamMembers } from "@/actions/team/read";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
+import { Team } from "@/lib/generated/prisma/client";
+
+// Enable Partial Prerendering (PPR) - Next.js 15 default
+export const dynamic = "force-static";
+export const revalidate = false; // Use cache tags for revalidation instead
+
+/**
+ * Fetches team members using fetch() with cache tags for revalidation
+ */
+async function getTeamData() {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    const res = await fetch(`${baseUrl}/api/home/team`, {
+      next: {
+        tags: [CACHE_TAGS.TEAM],
+      },
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch team members");
+      return [];
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching team members:", error);
+    return [];
+  }
+}
 
 export default async function TeamPage() {
-  // Fetch data from Supabase
-  const members = await getTeamMembers();
+  const members = await getTeamData();
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -28,7 +57,7 @@ export default async function TeamPage() {
 
           {/* Team Members */}
           <div className="space-y-8">
-            {members.map((member, index) => (
+            {members.map((member: Team, index: number) => (
               <AnimatedSection key={index} delay={index * 100}>
                 <div id={member.slug}>
                   <Card className="bg-gradient-to-br from-gray-900 to-black border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
