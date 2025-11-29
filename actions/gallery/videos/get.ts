@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { GalleryVideo } from "@/lib/types";
+import { prisma } from "@/lib/db";
+import { GalleryVideo } from "@/lib/generated/prisma/client";
 import { redis } from "@/lib/redis";
 
 export async function getGalleryVideos(): Promise<{
@@ -7,35 +7,33 @@ export async function getGalleryVideos(): Promise<{
   error: string | null;
 }> {
   try {
-    const supabase = await createClient();
     // Get ordered IDs from Redis
     const orderedIds = await redis.lrange("gallery:videos:order", 0, -1);
-    let videos = [];
-    let error = null;
+
+    // Fetch all videos using Prisma (default order by createdAt DESC)
+    const allVideos = await prisma.galleryVideo.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    let videos: GalleryVideo[] = [];
+    let error: string | null = null;
 
     if (orderedIds && orderedIds.length > 0) {
-      // Fetch videos by IDs
-      const { data, error: fetchError } = await supabase
-        .from("gallery-videos")
-        .select("*")
-        .in("id", orderedIds.map(Number));
+      // Map videos by id for fast lookup
+      const videoMap = new Map(allVideos.map((v) => [v.id, v]));
 
-      if (fetchError) {
-        error = fetchError.message;
-      } else {
-        // Order videos as per Redis
-        videos = orderedIds
-          .map((id) => data.find((v) => v.id === Number(id)))
-          .filter(Boolean);
-      }
+      // Order videos as per Redis
+      videos = orderedIds
+        .map((id) => videoMap.get(id))
+        .filter(Boolean) as GalleryVideo[];
+
+      // Append any videos not in Redis order (e.g., newly created)
+      const missingVideos = allVideos.filter((v) => !orderedIds.includes(v.id));
+      videos = [...videos, ...missingVideos];
     } else {
-      // Fallback: order by created_at desc
-      const { data, error: fetchError } = await supabase
-        .from("gallery-videos")
-        .select("*")
-        .order("created_at", { ascending: false });
-      videos = data || [];
-      error = fetchError ? fetchError.message : null;
+      // Fallback: just use Prisma result
+      videos = allVideos;
+      error = null;
     }
 
     return { videos, error };
