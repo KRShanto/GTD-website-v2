@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { GalleryImage } from "@/lib/types";
+import { prisma } from "@/lib/db";
+import { GalleryImage } from "@/lib/generated/prisma/client";
 import { redis } from "@/lib/redis";
 
 export async function getGalleryImages(): Promise<{
@@ -7,35 +7,33 @@ export async function getGalleryImages(): Promise<{
   error: string | null;
 }> {
   try {
-    const supabase = await createClient();
     // Get ordered IDs from Redis
     const orderedIds = await redis.lrange("gallery:images:order", 0, -1);
-    let images = [];
-    let error = null;
+
+    // Fetch all images using Prisma (default order by createdAt DESC)
+    const allImages = await prisma.galleryImage.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    let images: GalleryImage[] = [];
+    let error: string | null = null;
 
     if (orderedIds && orderedIds.length > 0) {
-      // Fetch images by IDs
-      const { data, error: fetchError } = await supabase
-        .from("gallery-images")
-        .select("*")
-        .in("id", orderedIds.map(Number));
+      // Map images by id for fast lookup
+      const imageMap = new Map(allImages.map((img) => [img.id, img]));
 
-      if (fetchError) {
-        error = fetchError.message;
-      } else {
-        // Order images as per Redis
-        images = orderedIds
-          .map((id) => data.find((img) => img.id === Number(id)))
-          .filter(Boolean);
-      }
+      // Order images as per Redis
+      images = orderedIds
+        .map((id) => imageMap.get(id))
+        .filter(Boolean) as GalleryImage[];
+
+      // Append any images not present in Redis order (e.g., newly created)
+      const missingImages = allImages.filter((img) => !orderedIds.includes(img.id));
+      images = [...images, ...missingImages];
     } else {
-      // Fallback: order by created_at desc
-      const { data, error: fetchError } = await supabase
-        .from("gallery-images")
-        .select("*")
-        .order("created_at", { ascending: false });
-      images = data || [];
-      error = fetchError ? fetchError.message : null;
+      // Fallback: just use Prisma result
+      images = allImages;
+      error = null;
     }
 
     return { images, error };

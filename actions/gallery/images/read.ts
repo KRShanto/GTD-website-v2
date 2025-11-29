@@ -1,76 +1,76 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { GalleryImage } from "@/lib/types";
+import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { GalleryImage } from "@/lib/generated/prisma/client";
 
-export async function getGalleryImages(): Promise<{
-  images: GalleryImage[];
-  error: string | null;
-}> {
+/**
+ * Fetches all gallery images using Prisma with optional Redis-based ordering.
+ *
+ * Redis stores a custom order of gallery image IDs under the key
+ * "gallery:images:order". If present, we apply this order on top of the
+ * default Prisma query (which orders by createdAt DESC).
+ */
+export async function getGalleryImages() {
   try {
-    // Get ordered IDs from Redis
+    // Fetch all images using Prisma (default order by createdAt DESC)
+    const allImages = await prisma.galleryImage.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Try to get custom order from Redis
     const orderedIds = await redis.lrange("gallery:images:order", 0, -1);
-    const supabase = await createClient();
-    let images = [];
-    let error = null;
-    if (orderedIds && orderedIds.length > 0) {
-      // Fetch images by IDs
-      const { data, error: fetchError } = await supabase
-        .from("gallery-images")
-        .select("*")
-        .in("id", orderedIds.map(Number));
-      if (fetchError) {
-        error = fetchError.message;
-      } else {
-        // Order images as per Redis
-        images = orderedIds
-          .map((id) => data.find((img) => img.id === Number(id)))
-          .filter(Boolean);
-      }
-    } else {
-      // Fallback: order by created_at desc
-      const { data, error: fetchError } = await supabase
-        .from("gallery-images")
-        .select("*")
-        .order("created_at", { ascending: false });
-      images = data || [];
-      error = fetchError ? fetchError.message : null;
+
+    if (!orderedIds || orderedIds.length === 0) {
+      return allImages;
     }
-    return { images, error };
+
+    // Map images by id for quick lookup
+    const imageMap = new Map(allImages.map((img) => [img.id, img]));
+
+    // Build ordered list based on Redis, then append any missing images
+    const orderedFromRedis = orderedIds
+      .map((id) => imageMap.get(id))
+      .filter(Boolean) as GalleryImage[];
+
+    const missingImages = allImages.filter(
+      (img) => !orderedIds.includes(img.id)
+    );
+
+    const finalImages = [...orderedFromRedis, ...missingImages];
+
+    return finalImages;
   } catch (error) {
-    console.error("Unexpected error:", error);
-    return { images: [], error: "An unexpected error occurred" };
+    console.error("Unexpected error (Prisma getGalleryImages):", error);
+    return [];
   }
 }
 
-export async function getGalleryImageById(id: number): Promise<{
+/**
+ * Fetches a single gallery image by its Prisma UUID string ID.
+ */
+export async function getGalleryImageById(id: string): Promise<{
   image: GalleryImage | null;
   error: string | null;
 }> {
   try {
-    const supabase = await createClient();
+    const image = await prisma.galleryImage.findUnique({
+      where: { id },
+    });
 
-    const { data, error } = await supabase
-      .from("gallery-images")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      console.error("Database error:", error);
+    if (!image) {
       return {
         image: null,
-        error: "Failed to fetch gallery image",
+        error: "Gallery image not found",
       };
     }
 
     return {
-      image: data,
+      image,
       error: null,
     };
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error (Prisma getGalleryImageById):", error);
     return {
       image: null,
       error: "An unexpected error occurred",
