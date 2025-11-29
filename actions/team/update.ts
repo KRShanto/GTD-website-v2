@@ -5,12 +5,13 @@ import {
   uploadTeamImageServer,
   deleteImageFromSevallaServer,
 } from "@/lib/sevalla/storage-server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/consts/cache-tags";
 
 /**
  * Generates a URL-friendly slug from a name
  * Converts to lowercase, replaces spaces with hyphens, and removes special characters
- * 
+ *
  * @param name - The name to convert to a slug
  * @returns A URL-friendly slug string
  */
@@ -23,7 +24,7 @@ function generateSlug(name: string): string {
 
 /**
  * Updates an existing team member in the database
- * 
+ *
  * This function handles the complete team member update process:
  * 1. Validates required fields (name, title, bio)
  * 2. Fetches the current team member to preserve existing image if no new image is provided
@@ -32,23 +33,23 @@ function generateSlug(name: string): string {
  * 5. Generates a new slug if the name has changed
  * 6. Updates the team member record in the database using Prisma
  * 7. Revalidates the relevant Next.js cache paths
- * 
+ *
  * @param id - The UUID string of the team member to update
  * @param formData - FormData containing updated team member information
  * @param formData.name - Team member's full name (required)
  * @param formData.title - Team member's job title (required)
  * @param formData.bio - Team member's biography (required)
  * @param formData.image - Optional new profile image file
- * 
+ *
  * @returns Object with either the updated member data or an error message
- * 
+ *
  * @example
  * ```typescript
  * const formData = new FormData();
  * formData.append("name", "John Doe");
  * formData.append("title", "Senior Producer");
  * formData.append("bio", "Updated biography...");
- * 
+ *
  * const result = await updateTeamMember("uuid-here", formData);
  * if (result.member) {
  *   console.log("Member updated:", result.member);
@@ -125,28 +126,29 @@ export async function updateTeamMember(id: string, formData: FormData) {
     // Revalidate Next.js cache paths
     revalidatePath("/admin/team");
     revalidatePath("/team");
+    revalidateTag(CACHE_TAGS.TEAM);
 
     return { member: teamMember };
   } catch (error) {
     console.error("Update team member error:", error);
-    
+
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes("Record to update not found")) {
         return { error: "Team member not found" };
       }
     }
-    
+
     return { error: "Failed to update team member" };
   }
 }
 
 /**
  * Updates multiple team members in the database
- * 
+ *
  * This function allows bulk updates of team member information.
  * Note: This does not handle image updates, only text fields.
- * 
+ *
  * @param updates - Array of update objects containing id, name, title, and bio
  * @returns Object with either the updated members array or an error message
  */
@@ -172,6 +174,7 @@ export async function updateMultipleTeamMembers(
     // Revalidate Next.js cache paths
     revalidatePath("/admin/team");
     revalidatePath("/team");
+    revalidateTag(CACHE_TAGS.TEAM);
 
     return { members: teamMembers };
   } catch (error) {
@@ -182,10 +185,10 @@ export async function updateMultipleTeamMembers(
 
 /**
  * Reorders team members using Redis
- * 
+ *
  * This function stores the team member order in Redis for retrieval
  * when displaying team members. The order is stored as a list of IDs.
- * 
+ *
  * @param ids - Array of team member UUIDs in the desired order
  * @returns Object with success status
  */
@@ -203,4 +206,3 @@ export async function reorderTeamMembers(ids: string[]) {
     return { error: "Failed to reorder team members" };
   }
 }
-
